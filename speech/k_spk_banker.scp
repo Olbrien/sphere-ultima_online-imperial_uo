@@ -1,0 +1,36 @@
+//Aug 06 '05 - Removed commented out DK restrictions, see old script pack if we need it back - Wren
+//Jan 15 '04 - commented out DK crap - Wren
+
+[SPEECH spk_banker]
+ON=*job*
+ON=*work*
+ON=*what*do*do*
+ON=*profession*
+ON=*occupation*
+     SAY I am a banker, and i bank all day.
+ 
+ON=*Balance*
+     SAY=You have <SRC.BANKBALANCE> gold in your account.
+
+ON = bank
+   if ( (<SRC.FLAGS> & statf_criminal) && (<SRC.KILLS> < 4))
+      SAY I don't attend to criminals!
+      return 1
+   endif
+   if ( (<SRC.FLAGS> & statf_dead) )
+      return 1
+   endif   
+   
+   
+   CLOSE_LAST_BODY
+   SRC.BANKSELF
+
+ON=hi
+ON=hello*
+ON=greetings*
+ON=good*see*thee*
+ON=Hail*
+ON=Greet
+     SAY Time is money.
+
+[EOF]

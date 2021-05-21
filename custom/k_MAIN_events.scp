@@ -1,0 +1,3283 @@
+//Changelog:
+//==========
+//04/12/2003 - Boo     - Added kill decay script
+//23/04/2003 - Firefly - Added on=@Gethit for player event, part of the summoner quest (meteor radiates heat) - Tested
+//29/04/2003 - Wigifer - Changed finding layers for jewelry to finding type (Jewelry fix) - Tested
+//03/05/2003 - Wigifer - Changed test jewelry remove, added stealing fail message - Tested
+//08/07/2003 - Wigifer - Alignment_init added - Tested
+//15/07/2003 - Tiffany - Karma and Fame is now fixed - Tested
+//05/08/2003 - Wigifer - Bags can have contents universally inspected with item lore - Tested
+//05/08/2003 - Wigifer - Instalog Fix but commented out until decided - Tested
+//06/08/2003 - Wigifer - Jewelry Test - Tested
+//19/08/2003 - Wigifer - Injection skill on player prevention - Tested
+//19/08/2003 - Wigifer - Jewelry Test - Tested
+//22/08/2003 - Wigifer - Jewelry Test & Nameset for restart - Tested
+//27/08/2003 - Wigifer - Rebirth and OC rank fix - FULLY Tested on test server
+//08/09/2003 - Tiffany - Patch-up of Rebirth and MAYBE OC - Tested, This is for you, Wig :o
+//08/09/2003 - Wrenn - Fix Sparring Tags to show over people who are sparring
+//09/11/2003 - Tiffany - Added the src to remove e_fame_gain for O/C Support > For Wigi ^_^
+//Jan 16 '04 - Wren - Added code for meditation fail
+//Mar 14 '04 - Wren - Added 4 hour kill decay time for kills 40+
+//Mar 20 '04 - Wigifer - Changed flux check for new system
+//June 14 '04 - Commented out HK/DK crap
+//Sept 25 '04 - Fixed syntax in @Hit for O/C Crim removal
+//Sept 25 '04 - Added Raist's poisoning scripts to @Hit
+// 27/10/2003 - Wren - Fixed Guards function
+// 28/06/2005 - Raist - Added a vendorhack detecter on death event
+// 19/07/2005 - Raist - Changed the way vendorhack detecter performs on death
+// 08/10/2005 - Raist - Added fs delay vs ganks
+// 10/10/2005 - Raist - Added a little something still in test phase though
+// 12/10/2005 - Raist - Added a log to check who kills who (and is killed) hopefully will help track down crashes
+// 21/11/2005 - Raist - Added stuff for bb
+// 17/01/2013 - Wigifer - Changed login\logout for donator skills (record\reset time)
+// 22/04/2013 - Ray - Added Militia stuff @Kill and @Death.
+
+///
+/// Login memory item\transporter
+///
+[ITEMDEF i_focus_timer]
+Id=i_memory
+name = Focus timer
+type = t_eq_script
+layer = 30
+
+
+  
+///
+/// Fame & Karma System
+///
+
+[FUNCTION dcshow125a]
+   IF  (0<SRC.TAG.LOGOUTSHOW> == 1)
+      SRC.TAG.LOGOUTSHOW
+      SRC.SYSMESSAGE @25 Disconnected status disabled
+   ELSE
+      SRC.TAG.LOGOUTSHOW = 1
+      SRC.SYSMESSAGE @25 Disconnected status enabled    
+   ENDIF
+RETURN 1
+
+[EVENTS e_emdoom]
+
+[EVENTS e_newbie]
+On=@Click
+   MESSAGE @0afe [New Player]
+   
+[FUNCTION renewbie]
+	EVENTS +e_newbie
+	tag.newbieout = 
+	
+	
+[EVENTS e_loggedout]
+
+[EVENTS e_fame_karma_gain]
+RETURN 1
+
+[FUNCTION f_msgservice]
+IF (<tag0.pending>)
+DIALOG d_message_display
+ENDIF
+
+[ITEMDEF i_tile_hidden]
+ID = i_floor_marble_4
+NAME = Hidden Tile (invis)
+
+ON=@Create
+COLOR = 0102
+TIMER = 30
+ATTR=attr_static|attr_move_never|attr_invis|attr_decay
+
+ON=@TIMER
+IF (<EVAL <LINK.P>> == <EVAL <P>>)
+    TIMER = 30
+    RETURN 1
+else
+    remove
+endif
+
+
+ON=@Step
+  
+if ( <src.FLAGS> & statf_dead )
+return 1
+ENDIF
+IF ( <src.isgm> || <src.iscouns> )
+      RETURN 1
+ELSEIF (<EVAL <LINK.UID>> == <EVAL <SRC.UID>>)
+   IF ( <P> = <link.P>)
+   RETURN 1
+   ELSE
+      REMOVE
+   ENDIF
+ELSE
+   IF (<EVAL <LINK.P>> == <EVAL <P>>)
+      if ( <LINK.FLAGS> & statf_hidden )
+          SRC.SYSMESSAGE You stumble upon <link.name> Hidden
+          LINK.flags=<LINK.flags> &~ statf_hidden
+          LINK.SYSMESSAGE You have been revealed
+          LINK.UPDATE
+          REMOVE
+      endif
+   ENDIF
+ENDIF
+
+
+[ITEMDEF b_criminal_timer]
+ID=01f29
+NAME=Criminal Timer
+TYPE=t_eq_script
+
+ON=@EQUIP
+   TIMER=240
+
+ON=@TIMER
+    CONT.FLAGS = <CONT.FLAGS> & ~statf_criminal
+    REMOVE
+    RETURN 1
+    
+    
+[ITEMDEF b_teleport]
+ID=01f29
+NAME=teleport Timer
+TYPE=t_eq_script
+
+ON=@EQUIP
+   TIMER=30
+
+ON=@TIMER
+    REMOVE
+    RETURN 1
+
+[FUNCTION CRIMINAL]
+SRC.SYSMESSAGE Criminal!
+serv.log Setting criminal on <src.name> act is <act.name> dunno is <name> odj is <obj.name> link is <link.name>
+SRC.FLAGS		= (<SRC.FLAGS> | statf_CRIMINAL)
+if !(<SRC.FINDID.b_criminal_timer.UID>)
+   SERV.NEWITEM b_criminal_timer
+   NEW.EQUIP <SRC.UID>
+ELSE
+   SRC.FINDID(b_criminal_timer).TIMER = 240
+endif
+
+[FUNCTION CRIMINAL2]
+SYSMESSAGE Criminal!
+serv.log Setting criminal2 on <name> act is <act.name> src is <src.name> odj is <obj.name> link is <link.name>
+FLAGS		= (<FLAGS> | statf_CRIMINAL)
+if !(<FINDID.b_criminal_timer.UID>)
+   SERV.NEWITEM b_criminal_timer
+   NEW.EQUIP <SRC.UID>
+ELSE
+   FINDID(b_criminal_timer).TIMER = 240
+endif    
+    
+[DEFNAME def_ctt]
+i_ctt_townkey		100	// temporary, until we get the itemdef
+
+
+[FUNCTION DEBUGSAY]
+   if ( 0<TAG.DEBUG> = 01)
+      SAY <args>
+   elseif (0<TAG.DEBUG> = 02)
+      Sysmessage <args>
+   endif
+
+
+[FUNCTION F_LOGOUT_HOUSE]
+
+   
+   //Leave gms in houses when they log out
+   if ( <SRC.ISGM> )
+      return 0
+   endif
+   
+   //Not is a house to move them out of
+   SRC.ACT = <SRC.REGION.UID>
+   if !( <SRC.ACT.TYPE> == t_multi )
+      return 0
+   endif
+   
+   //Don't move them out of the house if they're fighting
+   if ( (<SRC.ACT.TYPE> == t_multi) && <SRC.MEMORYFINDTYPE.memory_fight> )
+      return 0
+   endif
+
+   //Leave owners of houses in the house when they log out
+   if ( <SRC.ACT.MORE1> == <SRC.UID> )
+      return 0
+   endif
+
+   //Move to sign position if we get this far - Hermitage +1 on the Y first to fix loot potential
+   IF ((<SRC.ACT.TYPE> == t_multi) && (<SRC.ACT.BASEID>==i_NIM_1))
+      SRC.P=<SRC.ACT.LINK.P.X>,<EVAL <SRC.ACT.LINK.P.Y>+1>,<SRC.ACT.LINK.P.Z>,<SRC.ACT.LINK.P.M>
+      RETURN 1
+   ENDIF
+   
+   
+   
+   SRC.P	= <SRC.ACT.LINK.P>
+   return 1
+
+
+[FUNCTION F_LOGIN_INIT_TAGS]
+   if ( <SRC.REGION.UID> == 0 )
+      SRC.GO <SRC.P>
+   endif
+
+   if ( <SRC.TAG0.TOTALCONNECTTIME> == 0 )	// connection time
+      SRC.TAG0.TOTALCONNECTTIME	= 0
+   endif
+
+   IF ( <SRC.TAG0.LOYALTIME> == 0 ) // loyalty points
+	SRC.TAG0.LOYALTIME = 0
+   ENDIF
+
+   if ( <SRC.TAG0.BACKUP.KILLS> == 0 )		// kill count fix
+      SRC.TAG0.BACKUP.KILLS = 0
+   endif
+
+   if ( <SRC.TAG0.LASTGUARDS> == 0 )
+      SRC.TAG0.LASTGUARDS	= 0
+   endif
+
+   SRC.TAG.DEBUG.SKILLS		= 
+   SRC.TAG.DEBUG.STATS		= 
+   SRC.TAG.DEBUG.COMBAT		= 
+   
+   SRC.TAG0.LASTCONNECTTIME	= <TIME>
+   SRC.TAG0.LASTLOYALTIME = <TIME>
+   SRC.alignment_init
+   SRC.TAGCLEANUP
+
+
+//BY:      Jorge Pereira, evren@portugalmail.pt
+// this originally started as armour and spell recoding, ended up in a lot more
+
+// speed check items
+[ITEMDEF i_walk_timer]
+id=i_gold
+name=Timer do cs
+type=t_eq_script
+
+ON=@Create
+	Timer=5
+
+ON=@Timer
+	Remove
+	return 0
+
+[ITEMDEF i_reset_cscheck]
+id=i_gold
+name=Reset cs check
+type=t_eq_script
+
+ON=@Create
+	Timer=60*15
+
+ON=@Timer
+	if !(<topobj.findid(i_walk_timer)>) && !(<topobj.flags>& statf_war)
+		topobj.tag.cscheck=0
+	endif
+	remove
+	return 0
+
+
+[EVENTS e_all_pc]
+
+// Vendor item deed - Safe buying and selling courtesy of Wigifer
+// Other half in k_spk_shopkeep.scp
+
+ON=@DISMOUNT
+	IF  (<SRC.FLAGS> & statf_hidden )
+		SRC.FLAGS = (<SRC.FLAGS> & ~statf_hidden)
+		SRC.SYSMESSAGE You have been revealed
+		SRC.UPDATE
+	ENDIF
+	
+
+//ON=@USEREXWALKLIMIT
+//	if (<src.findid(i_walk_timer)>)
+//		return 1
+//	endif
+//
+//	if !(<src.findid(i_reset_cscheck)>)
+//		serv.newitem i_reset_cscheck
+//		new.equip
+//	endif
+//
+//	if !(<src.tag0.cscheck>)
+//		src.tag0.cscheck += 1
+//		serv.newitem i_walk_timer
+//		new.equip
+//		return 1
+//	elseif (<src.tag.cscheck> > 0) && (<src.tag.cscheck> < 5)
+//		src.tag.cscheck += 1
+//		serv.newitem i_walk_timer
+//		new.equip
+//		return 1
+//	else
+//		serv.log SPEEDHACK: <src.account> - <src.name> - is speed hacking??
+//		//src.hits 0
+//		serv.newitem i_walk_timer
+//		new.equip
+//		src.tag.cscheck 0
+//		return 1
+//	endif
+
+
+	
+//ON=@UserQuestButton
+//serv.log db query
+//DB.QUERY "SELECT `total` FROM `quests` WHERE `uid` = '<SRC.UID>'"
+//IF (0<DB.ROW.NUMROWS>)
+//    FOR CURRENTROW 0 <eval <DB.ROW.NUMROWS>-1>
+//    SRC.SYSMESSAGE @56 You currently have <DB.ROW.<eval <LOCAL.CURRENTROW>>.total> Quest Points.
+//    END
+//ELSE
+//SRC.SYSMESSAGE @56 You currently have 0 Quest Points.
+//ENDIF
+
+ON=@PetDesert
+   SERV.LOG Test Desert Master
+
+//SRC.EVENTS +e_outlaw
+
+ON=@PersonalSpace
+
+if (<src.stamina> < <src.dex>) && !(<SRC.ISGM>) && !(<SRC.ISINVIS>)
+  return 1
+endif
+
+
+if ( <ISHIDDEN> )
+	ARGN1=0
+	return 0
+elseif  ( <ISINVIS> )
+	ARGN1=0
+	return 0
+elseif  ( <SRC.ISGM> )
+	ARGN1=0
+	return 0
+endif
+
+if !(<SRC.FINDID.b_shove_stamnuker.UID>)
+   SERV.NEWITEM b_shove_stamnuker
+   ARGN1 = 0
+   NEW.EQUIP <SRC.UID>
+   src.sysmessage You shove <name> out of the way
+   RETURN 0
+ELSE
+    IF (<eval ( <SRC.STAMINA> - <SRC.FINDID(b_shove_stamnuker).more1>)> > <eval (<SRC.STAMINA>/2)>) 
+	   ARGN1 = 0
+	   SRC.FINDID(b_shove_stamnuker).TIMER = 1
+	   SRC.FINDID(b_shove_stamnuker).MORE = <eval (<SRC.FINDID(b_shove_stamnuker).MORE> + (<eval <SRC.STAMINA>/20>))> 
+	   src.sysmessage You shove <name> out of the way
+	   RETURN 0
+   ELSE
+   	src.sysmessage You dont have enough energy to push <name> out of the way
+   	RETURN 1
+   ENDIF
+endif
+
+//IF ( <SRC.STAMINA> >= <eval ( <SRC.ODEX> - 5 )>)
+//	   ARGN1 = 0
+//	   src.sysmessage You shove <name> out of the way
+//	   SRC.STAMINA=<eval ( <SRC.STAMINA> - 5)>
+//	   RETURN 0
+//else
+// src.sysmessage You dont have enough energy to push <name> out of the way
+// return 1
+//ENDIF
+
+//ON = @Macro_OpenDoor
+//   SERV.LOG Triggered Macro_OpenDoor
+//   src.sysmessage The OpenDoor macro is disabled. Please open the door with a double click.
+//   return 1
+
+
+ON=@UserExtCmd
+
+IF (<ARGN1> == 88)
+  IF (<SRC.UID.<SRC.REGION.UID>.TYPE>==t_multi)
+	FORITEMS 3
+	IF STRMATCH("T_DOOR", "<TYPE>") 
+	USEITEM
+	RETURN 1
+ENDIF
+ENDFOR
+ENDIF
+
+ON = @Criminal
+IF ( <ISORDER> )
+            IF (<SRC.ISCHAOS>)
+            FLAGS = <FLAGS> & ~statf_criminal
+            return 1
+            ENDIF
+ELSEIF ( <ISCHAOS> )
+            IF (<SRC.ISORDER>)
+            FLAGS = <FLAGS> & ~statf_criminal
+            return 1
+            ENDIF
+ENDIF
+
+ON=@CallGuards
+   RETURN <EVAL <F_CALL_GUARDS>>
+   
+ON = @Target_CanSee
+   return 1
+
+
+ON = @HUNGER
+   IF <ARGN1> = 0
+      RETURN 1
+   ENDIF
+
+ON=@ClientTooltip 
+   IF ((<MEMORYFINDTYPE.memory_guild.UID>) && !(<FINDID.i_rune_incognito.uid>))
+      OBJ=<MEMORYFINDTYPE.MEMORY_GUILD.LINK.UID>
+      FOR 0 <EVAL <OBJ.MEMBER.COUNT>-1>
+         IF (<OBJ.MEMBER.<EVAL <LOCAL._FOR>>.UID> = <UID>)
+            TRY OBJ.MEMBER.<EVAL <LOCAL._FOR>>.SHOWABBREV=0
+         ENDIF
+      ENDFOR
+      IF (0<TAG.GUILDABBREVIATION>)
+         src.addcliloc 1060802,[<UID.<memoryfindtype.memory_guild.LINK>.ABBREV>]
+      ENDIF
+   ENDIF
+IF (<ISEVENT.e_newbie>)   
+src.addcliloc 1070722,New Player
+endif
+IF ( <ISORDER> )
+src.addcliloc 1042971,<DEF.CENTER>Faction :ORder<DEF.CENTER>
+ELSEIF ( <ISCHAOS> )
+src.addcliloc 1042971,<DEF.BFONT_BLUE><DEF.CENTER>Faction : Chaos<DEF.CENTERE><DEF.BFONTE>
+ENDIF
+ON = @Click
+
+   LOCAL.CHARMESSAGE=
+
+   IF STRMATCH( "<SRC.TAG.QUESTNAME>", "Roleplaying" ) 
+      SRC.TAG.QUESTNAME	= 
+   ENDIF
+
+   if ( <SRC.ISGM> && <ISHIDDEN> )
+      IF ( strlen(<LOCAL.CHARMESSAGE>) > 1)
+         LOCAL.CHARMESSAGE=<LOCAL.CHARMESSAGE>, Hidden
+      ELSE
+         LOCAL.CHARMESSAGE=[Hidden
+      ENDIF
+   endif
+   if ( <SRC.ISGM> && <ISINVIS> )
+      IF ( strlen(<LOCAL.CHARMESSAGE>) > 1)
+         LOCAL.CHARMESSAGE=<LOCAL.CHARMESSAGE>, Invis
+      ELSE
+         LOCAL.CHARMESSAGE=[Invis
+      ENDIF
+   endif
+   if ( <ISSPARING> )
+      IF ( strlen(<LOCAL.CHARMESSAGE>) > 1)
+         LOCAL.CHARMESSAGE=<LOCAL.CHARMESSAGE>, Sparring
+      ELSE
+         LOCAL.CHARMESSAGE=[Sparring
+      ENDIF
+   endif
+   if ( strcmp( "<TAG.QUESTNAME>", "" ) )
+      IF ( strlen(<LOCAL.CHARMESSAGE>) > 1)
+         LOCAL.CHARMESSAGE=<LOCAL.CHARMESSAGE>, On Quest: <TAG.QUESTNAME>
+      ELSE
+         LOCAL.CHARMESSAGE=[On Quest: <TAG.QUESTNAME>
+      ENDIF
+   endif
+   if ( strcmp( "<TAG.MODESET>", "" ) )
+      IF ( strlen(<LOCAL.CHARMESSAGE>) > 1)
+         LOCAL.CHARMESSAGE=<LOCAL.CHARMESSAGE>, <TAG.MODESET>
+      ELSE
+         LOCAL.CHARMESSAGE=[<TAG.MODESET>
+      ENDIF
+   endif
+
+
+
+   IF ( strlen(<LOCAL.CHARMESSAGE>) > 1)
+      MESSAGE <LOCAL.CHARMESSAGE>]
+   ENDIF
+   
+   alignment_click
+
+   IF ((<MEMORYFINDTYPE.memory_guild.UID>) && !(<FINDID.i_rune_incognito.uid>))
+      OBJ=<MEMORYFINDTYPE.MEMORY_GUILD.LINK.UID>
+      FOR 0 <EVAL <OBJ.MEMBER.COUNT>-1>
+         IF (<OBJ.MEMBER.<EVAL <LOCAL._FOR>>.UID> == <UID>)
+            TRY OBJ.MEMBER.<EVAL <LOCAL._FOR>>.SHOWABBREV=0
+         ENDIF
+      ENDFOR
+      IF (0<TAG.GUILDABBREVIATION>)
+         TRY MESSAGE @<f_guildabbreviation_color> [<UID.<memoryfindtype.memory_guild.LINK>.ABBREV>]
+      ENDIF
+   ENDIF
+   
+   
+ON = @DClick
+   IF ( <SRC.UID> == <UID> )
+      IF ( 0<SRC.TAG.SHOW.PAPERS> = 01 )
+         SRC.PAPERS
+      ENDIF
+   
+
+      IF ( <SRC.FLAGS> & statf_freeze ) 
+         IF ( <SRC.FLAGS> & statf_onhorse )
+            RETURN 1
+         ENDIF
+      ELSEIF ( <SRC.FLAGS> & statf_stone ) 
+         IF ( <SRC.FLAGS> & statf_onhorse )
+            RETURN 1
+         ENDIF
+      ENDIF
+   ENDIF
+   
+  
+   RETURN 0
+
+	  
+on = @SkillStart		// trigger for the skill progress system
+   SRC.DEBUGSAY SkillStart <ACTION>
+   
+	IF !(<SRC.FINDID(i_afk_check_delay)>) // AFK Check won't appear again for 60 minutes after successfully answering to one
+
+	IF ((<ACTION> == skill_mining) && (RAND(100) <= 5)) // While Mining, 5% chance to get AFK Checked
+		IF !(strmatch("<REGION.NAME>","Mt Kendall")) // Unless the player is at Mt Kendall he gets AFK Checked regardless of skill amount or lock status
+			SRC.AUTOMATICAFKCHECK 
+		ELSE
+			IF !( <SRC.SKILLLOCK.45> == 0 ) // If the player is at Mt Kendall but not sparring the skill (Arrow not up) he gets AFK Checked
+				SRC.AUTOMATICAFKCHECK 
+			ELSE
+				IF !(<SRC.MINING> < 1000) // If the player is at Mt Kendall with arrow up but with more or equal to 100% Mining he gets AFK Checked
+					SRC.AUTOMATICAFKCHECK
+				ENDIF
+			ENDIF
+		ENDIF
+	
+	ELSEIF ((<ACTION> == skill_lumberjack) && (RAND(100) <= 5)) // While Lumbering, 5% chance to get AFK Checked		
+		IF !(<SRC.SKILLLOCK.44>==0) // If skill arrow is not up he gets AFK Checked
+			SRC.AUTOMATICAFKCHECK
+		ELSE
+			IF !(<SRC.LUMBERJACKING> < 1000) // If the arrow is up but Lumberjacking is equal or higher than 100% he gets AFK Checked
+				SRC.AUTOMATICAFKCHECK
+			ENDIF
+		ENDIF
+	
+	ELSEIF ((<ACTION> == skill_fishing) && (RAND(100) <= 5)) // While Fishing, 5% chance to get AFK Checked	
+		IF !(<SRC.SKILLLOCK.18>==0) // If skill arrow is not up he gets AFK Checked
+			SRC.AUTOMATICAFKCHECK
+		ELSE
+			IF !(<SRC.FISHING> < 1000) // If the arrow is up but Fishing is equal or higher than 100% he gets AFK Checked
+				SRC.AUTOMATICAFKCHECK
+			ENDIF
+		ENDIF
+		
+	ENDIF
+			
+	ENDIF
+   
+   //If the skill that is gonna try to roll isn't the skill fix it
+   If !(<ACTION> = <SRC.findlayer(layer_k_control).MORE>)
+      SRC.findlayer(layer_k_control).MORE=<ACTION>
+   ENDIF
+   
+   //Don't run on npcs
+   if ( <SRC.ISNPC> )
+      RETURN 0
+   endif
+  
+   //See if they're paralyzed
+   if ( <FLAGS> & statf_freeze )
+      SYSMESSAGE You can't do much in your current state.
+      return 1
+   endif
+   
+   IF ((<eval (<flags>&02000)==02000>) && (<ACCOUNT.PLEVEL> <= 1))
+   if !(<FINDID.i_skargard_phased.UID>)
+      SYSMESSAGE You cannot accomplish this in your current form.
+      RETURN 1
+   endif
+   ENDIF
+
+   //Make sure this is a valid skill number?
+   if ( <eval (<SERV.LOOKUPSKILL <SERV.SKILL(<ACTION>).KEY>>)> > 53 )
+      // src.sysmessage Action <action> is not raisable.
+      RETURN 0
+   endif
+
+
+   VAR.RETURN		= 0
+   VAR.NOIMPROVE	= 0
+
+   SRC.TAG.SKILLSTART.x		= <SRC.P.x>
+   SRC.TAG.SKILLSTART.y		= <SRC.P.y>
+
+   if ( 0<SRC.TAG.LastTarg> == 0 )
+      SRC.TAG.LastTarg	= 0
+   endif
+   
+   
+   if ( 0 )
+   elseif ( <action> == Skill_Unused1 )
+      return 0
+   elseif ( <action>  == Skill_Unused2 ) 
+      return 0
+   elseif ( <action> == skill_stealing )
+      IF (<SRC.MEMORYFINDTYPE(memory_fight).uid>)
+         SRC.SYSMESSAGE You cannot fight whilst in combat!
+         RETURN 1
+      ELSEIF (<SRC.FLAGS> & statf_war)
+         SRC.SYSMESSAGE You cannot steal whilst in warmode!
+         RETURN 1
+      ELSEIF (<SRC.ACCOUNT.JAIL>=1)
+         SRC.SYSMESSAGE Stealing whilst in Jail... Not a good idea.
+         RETURN 1
+      ELSEIF ((<ACT.TOPOBJ.ID>==c_h_player_vendor) || (<ACT.TOPOBJ.ID>==c_h_player_vendor_f))
+         SRC.SYSMESSAGE Player vendors are trained in keeping thieves away...
+         RETURN 1
+      ELSEIF (<ACT.TOPOBJ.FLAGS> & statf_invul )
+         SRC.SYSMESSAGE You cannot steal from an immortal...
+         RETURN 1
+      ELSEIF ((<ACT.TOPOBJ.MEMORYFINDTYPE(memory_fight).uid>) && (<ACT.TOPOBJ.ISPLAYER>))
+         SRC.SYSMESSAGE You cannot steal from someone who is fighting!
+         RETURN 1
+      ELSEIF (<ACT.TOPOBJ.ISPLAYER>)
+         SRC.SYSMESSAGE You cannot steal from players at this time...
+         SKILLINIT_stop
+         RETURN 1
+      ENDIF
+      
+      LOCAL.STEALSUCCESS=<EVAL RAND(80)> + (<EVAL <SRC.STEALING> / 50) + 1>
+     
+      IF (<EVAL <LOCAL.STEALSUCCESS>> >= 95)
+         SRC.SYSMESSAGE You begin to rummage through <ACT.TOPOBJ.NAME>'s belongings with confidence, and gain fame for it...
+         IF (<SRC.FAME> < 9990)
+            SRC.FAME=<SRC.FAME>+10
+         ENDIF
+      ELSEIF (<EVAL <LOCAL.STEALSUCCESS>> >= 75)
+         SRC.SYSMESSAGE You begin to rummage through <ACT.TOPOBJ.NAME>'s belongings 
+      ELSEIF (<EVAL <LOCAL.STEALSUCCESS>> >= 55)
+         SRC.SYSMESSAGE You go to rummage through <ACT.TOPOBJ.NAME>'s backpack but struggle to grasp anything...
+         RETURN 1
+      ELSEIF (<EVAL <LOCAL.STEALSUCCESS>> >= 30)
+         IF ((<ACT.TOPOBJ.KARMA> > 500) || (<ACT.TOPOBJ.KILLS> <= 5))
+            SRC.CRIMINAL
+         ENDIF
+         SRC.SYSMESSAGE You fumble through <ACT.TOPOBJ.NAME>'s belongings desperately as <ACT.TOPOBJ.SEX he/she> catches you out!
+         SRC.SAY <SRC.NAME> is attempting to steal from <ACT.TOPOBJ.NAME>!
+      ELSE
+         IF ((<ACT.TOPOBJ.KARMA> > -900 || (<ACT.TOPOBJ.KILLS> <= 5))
+            SRC.CRIMINAL
+         ENDIF
+         SRC.SYSMESSAGE You go to rummage through <ACT.TOPOBJ.NAME>'s backpack but <ACT.TOPOBJ.SEX he/she> stops you, and you lose fame for it!
+         SRC.SAY <SRC.NAME> is attempting to steal from <ACT.TOPOBJ.NAME>!
+         IF (<SRC.FAME> > 10)
+            SRC.FAME=<SRC.FAME>-10
+         ENDIF
+         RETURN 1
+      ENDIF
+      
+//      IF !(<CONT.LAYER>==layer_backpack)
+//         SRC.SYSMESSAGE You can only steal by clicking a player or NPC!
+//         RETURN 1
+//      ENDIF
+   elseif ( <action> == Skill_Magery )
+      SRC.TAG.LASTSPELL	= <actarg1>
+      return 0
+   endif
+   
+
+   //Send through custom init checks
+   SAFETRY SRC.SKILLINIT_<eval (<SERV.LOOKUPSKILL <SERV.SKILL(<ACTION>).KEY>>)>
+   if ( <var.return> != 0 )
+      ACTION = -1
+      return 1
+   endif
+
+
+   if ( 0 )
+
+   //Disable preset skills
+   
+//   elseif ( <action> == Skill_Anatomy)
+//      SRC.SYSMESSAGE Assessment is disabled
+//      return 1
+//   elseif ( <action> == Skill_EvalInt)
+//      SRC.SYSMESSAGE Mystic Lore is disabled
+//      return 1
+//   elseif ( <action> == Skill_AnimalLore)
+//      SRC.SYSMESSAGE Assessment is disabled at this time...
+//      RETURN 1
+   //Pass Through Resource Gathering skills to avoid rolls on "no resource" messages
+   elseif ( <action> == Skill_Fishing )
+      return 0
+   elseif ( <action> == Skill_Mining )
+      return 0
+   elseif ( <action> == Skill_Lumberjack )
+      return 0
+      
+
+
+   //Pass Through Combats skills...not sure why we were doin this...maybe remove this
+   elseif ( <action> == Skill_Archery )
+      return 0
+   elseif ( <action> == Skill_Wrestling )
+      return 0
+   elseif ( <action> == Skill_Macefighting )
+      return 0
+   elseif ( <action> == Skill_Swordsmanship )
+      return 0
+   elseif ( <action> == Skill_Fencing )
+      return 0
+   elseif ( <action> == Skill_Tactics )
+      return 0
+
+   //Pass Through Lores to run action on success
+   elseif ( <action> == Skill_ArmsLore )
+      return 0
+   elseif ( <action> == Skill_AnimalLore )
+      return 0
+   elseif ( <action> == Skill_ItemLore )
+      if ( 0<SRC.ACT.CONT> )
+         //Alteration here
+         if ( <SRC.ACT.TYPE> == t_container )
+            action = -1
+            SRC.ACT.INSPECT_BAG
+            return 1
+         endif
+         //Alteration here
+      endif
+      return 0
+   elseif ( <action> == Skill_NetherLore )
+      return 0
+      
+   //Dunno why we're passing this one either - maybe remove this
+   elseif ( <action> == Skill_Necromancy )
+
+   elseif ( <action> == Skill_HerbLore )
+      LOCAL.ACT		= <SRC.ACT>
+      SRC.NEWITEM i_skill_herbslore
+      SRC.ACT.TRIGGER @Init
+      SRC.ACT.LINK	= <LOCAL.ACT>
+      SRC.ACT.CONT	= <SRC.UID>
+      return 1
+
+   //Trigger Custom SkillStart/Roll
+   elseif ( <VAR.NOIMPROVE> == 0 )		
+      SRC.findlayer(layer_k_control).trigger @SkillStart  
+   endif
+   
+  
+
+   RETURN 0
+
+
+ON=@SkillAbort
+   SRC.DEBUGSAY SkillAbort
+
+   if ( <findlayer(layer_k_control).uid> )
+      findlayer(layer_k_control).TRIGGER @SkillFail
+      findlayer(layer_k_control).MORE2	= 0
+      findlayer(layer_k_control).timer	= -1
+   endif
+     
+   RETURN 0	//Return 0 to let default messages show
+   
+
+ON=@SkillSuccess
+   SRC.DEBUGSAY SkillSuccess <ACTION>
+   SRC.DEBUGSAY Skill ACT: <SRC.ACT.NAME>:<SRC.ACT.UID> // :<SRC.ACT.QUALITY>
+   
+   //Trigger these if successful only, fail under 30 handled in SkillFail 
+   if ( 0 )
+   elseif ( <action> == Skill_Fishing )
+      SRC.findlayer(layer_k_control).trigger @SkillStart
+   elseif ( <action> == Skill_Mining )
+      SRC.findlayer(layer_k_control).trigger @SkillStart
+   elseif ( <action> == Skill_Lumberjack )
+      SRC.findlayer(layer_k_control).trigger @SkillStart  
+      
+   //Custom Lores
+   elseif ( <action> == Skill_ArmsLore )
+     IF ( <SRC.ACT.ISWEAPON> || <SRC.ACT.ISSHIELD> || <SRC.ACT.ISARMOUR> )
+        SRC.ArmsLore_Identify
+        SRC.findlayer(layer_k_control).trigger @SkillStart
+     ELSE
+        if ( <findlayer(layer_k_control).uid> )
+           findlayer(layer_k_control).TRIGGER @SkillFail
+           findlayer(layer_k_control).MORE2	= 0
+           findlayer(layer_k_control).timer	= -1
+        endif
+     ENDIF
+     RETURN 1
+   elseif ( <action> == Skill_AnimalLore )
+     SRC.AnimalLore_Identify
+     SRC.findlayer(layer_k_control).trigger @SkillStart
+     RETURN 1
+	IF ( <ACT.BASEID> == i_pouch )
+        IF STRMATCH("<ACT.NAME>","group of friends")
+        if ( <findlayer(layer_k_control).uid> )
+           findlayer(layer_k_control).TRIGGER @SkillFail
+           findlayer(layer_k_control).MORE2	= 0
+           findlayer(layer_k_control).timer	= -1
+        endif
+        ENDIF
+     ELSE
+        SRC.ItemLore_Identify
+        SRC.findlayer(layer_k_control).trigger @SkillStart     
+     ENDIF
+     RETURN 1 
+   elseif ( <action> == Skill_Netherlore )
+     SRC.Netherlore_Identify
+     SRC.findlayer(layer_k_control).trigger @SkillStart
+     RETURN 1  
+   elseif ( <action> == Skill_Anatomy )
+     IF (<SRC.ANATOMY>>=90.0)
+        IF strmatch("c_*","<SRC.ACT.BASEID>")
+           IF (<SRC.ACT.NPC>)
+              SRC.SYSMESSAGE <SRC.ACT.NAME> looks to have <SRC.ACT.HITS> hps out of <SRC.ACT.STR> remaining.
+           ELSE
+              SRC.SYSMESSAGE <SRC.ACT.NAME> looks to have <SRC.ACT.HITS> hps remaining.
+           ENDIF
+        ENDIF
+     ENDIF
+     RETURN 0
+   elseif ( <action> == Skill_Stealing )
+      IF ((<EVAL RAND(5)> = 0) && (<SRC.REGION.GUARDED>=1))
+         SRC.CRIMINAL
+         SRC.SAY <SRC.NAME> has visibly stolen a <ACT.NAME>!
+      ELSE
+         SRC.MESSAGE You steal the <ACT.NAME> without anyone noticing...
+      ENDIF
+
+   elseif ( <action> == Skill_Hiding )
+    // SRC.NEWITEM=i_tile_hidden
+    // SRC.TAG.hiddentile = <src.act.uid>
+    // SRC.ACT.LINK=<src.uid>
+    // SRC.ACT.P	= <P>
+	forchars 0
+		if (<isnpc>)
+		src.sysmessage You fail to hide so close to <name>
+		return 1
+		endif
+		endfor
+      elseif ( <action> == Skill_Necromancy )
+      
+      return 0 
+   endif
+  
+
+ON=@SkillFail		// trigger for the skill progress system
+   SRC.DEBUGSAY SkillFail <ACTION>
+   
+   TAG.LastTarg		= 0
+   
+   if ( <findlayer(layer_k_control).uid> )
+      findlayer(layer_k_control).TRIGGER @SkillFail
+      findlayer(layer_k_control).MORE2	= 0
+      findlayer(layer_k_control).timer	= -1
+   endif
+   
+
+   if ( 0 )
+   elseif ( <action> == Skill_Meditation )
+      meditation_remove
+   elseif ( <action> == Skill_Stealing )
+      DORAND <2>
+         MESSAGE You fail to steal anything...
+         MESSAGE You were unable to steal anything...
+      ENDDO
+   elseif ( <action> == Skill_Lumberjack )
+         MESSAGE You hack at the tree for a while, but fail to produce any useable wood.
+   elseif ( <action> == Skill_Mining )
+         MESSAGE You loosen some rocks but fail to find any useable ore.
+   elseif ( <action> == Skill_Detection )
+      f_skillfail_detecthidden
+   elseif ( <action> == Skill_Inscription )
+      CONSUME 1 i_scroll_blank	// always consume a scroll on failure
+      MESSAGE You fail the inscription.
+   elseif ( <action> == Skill_Necromancy )
+         
+      return 0 
+   endif
+
+   RETURN 0
+
+
+ON = @HitTry
+   if ( <action> == Skill_Archery )
+     TAG.HIT_ACT	= <ACT.UID>
+     ACT	= <findlayer(layer_hand2).uid>
+     if ( !strcmp( "<TAG.AMMO.<ACT.TYPE>.BASEID>", "" ) )
+        if ( 0 )
+        elseif ( <ACT.TYPE> == t_weapon_bow )
+           sysmessage You must select some type of ammo for your bow.
+        elseif ( <ACT.TYPE> == t_weapon_xbow )
+           sysmessage You must select some type of ammo for your crossbow.
+        endif
+        ACT	= 0
+        return 1
+     endif
+
+     if !( <restest <TAG.AMMO.<ACT.TYPE>.BASEID>> )
+        sysmessage You are out of <TAG.AMMO.<ACT.TYPE>.NAME>.
+        ACT	= 0
+        return 1
+     endif
+     
+     ACT	= <TAG.HIT_ACT>
+  endif
+
+ON = @HitMiss
+   if ( <action> == Skill_Archery )
+      ACT	= <findlayer(layer_hand2).uid>
+      CONSUME 1 <TAG.AMMO.<ACT.TYPE>.BASEID>
+   endif
+
+   return <f_weapon_miss>
+
+
+ON = @GetHit
+
+
+
+IF <FINDID.M_EXIT_DELAY.UID>
+FINDID.M_EXIT_DELAY.REMOVE
+EMOTE fumble with the door
+endif
+
+//   SRC.FLAGS=<SRC.FLAGS>&~statf_reactive
+   //Added to cancel door escape
+   IF ( (<SRC.FLAGS> & statf_pet) && <SRC.NPC> && <region.guarded> )
+		if ( <src.memoryfindtype( memory_ipet ).LINK> != <UID> )
+			if (( <KARMA> > -900 ) || ( <KILLS> < 4 ) || !(<FLAGS> & statf_criminal))
+				if  !( <src.MEMORYFIND.<UID>.color> & memory_harmedby )
+                   SRC.FLAGS		= (<SRC.FLAGS> | statf_CRIMINAL)	
+				   serv.log setting crim on pet <src.name> for attacking <name> in gz
+				endif
+			endif
+		endif	
+   ENDIF
+
+   IF <FINDID.M_factionHome.UID>
+      FINDID.M_factionHome.REMOVE
+   ENDIF
+   
+   IF <FINDID.m_teleportt.UID>
+      FINDID.m_teleportt.REMOVE
+   ENDIF
+
+   IF <FINDID.Memory_FactionHome_Brotherhood.UID>
+	FINDID.Memory_FactionHome_Brotherhood.REMOVE
+   ENDIF
+
+   IF <FINDID.Memory_FactionHome_Mercenary.UID>
+	FINDID.Memory_FactionHome_Mercenary.REMOVE
+   ENDIF
+
+   IF <FINDID.Memory_FactionHome_Syndicate.UID>
+	FINDID.Memory_FactionHome_Syndicate.REMOVE
+   ENDIF
+   
+   IF <FINDID.Memory_FactionHome_Chaos.UID>
+	FINDID.Memory_FactionHome_Chaos.REMOVE
+   ENDIF
+
+   IF <FINDID.Memory_FactionHome_Order.UID>
+	FINDID.Memory_FactionHome_Order.REMOVE
+   ENDIF
+
+   IF <FINDID.escape_teleport_delay.UID>
+      FINDID.escape_teleport_delay.REMOVE
+   ENDIF
+   
+    IF <FINDID.M_Wedding_Ring.UID>
+      FINDID.M_Wedding_Ring.REMOVE
+   ENDIF
+   
+   
+  
+if ( <argn2> & 04 ) //04 is dam_magic
+ IF (RAND(3)==1)
+	 IF (<TAG.ARM.EFFECT.HITS> > <hits> )
+	    sysmessage You dont have enough hits to absorb this attack
+	    return 0
+	 ELSEIF (<TAG.ARM.EFFECT.STAM> > <stamina> )
+	    sysmessage You dont have enough stamina to absorb this attack 
+	    return 0
+	 ELSEIF (<TAG.ARM.EFFECT.MANA> > <mana> )
+	    sysmessage You dont have enough mana to absorb this attack 
+	    return 0
+	 ENDIF	 
+	 
+  IF (<eval <var.argn>> == 51) || (<eval <var.argn>> == 5) || (<eval <var.argn>> == 18) || (<eval <var.argn>> == 43)
+    //fire spells // (<eval <var.argn>> == 28) temp fix for fire field
+    IF (<TAG.ARM.EFFECT.RES_FIRE> > 0 )
+     IF (<TAG.ARM.EFFECT.RES_FIRE> >= 99 )
+             ARGN = ARGN - ((<argn>*98) / 100)
+     ELSE
+	    ARGN = ARGN - ((<ARGN>*<TAG.ARM.EFFECT.RES_FIRE>) / 100)
+     SYSMESSAGE @0afe The damage is decreased due to your fire resistance.
+     ENDIF
+    ELSEIF (<TAG.ARM.EFFECT.RES_FIRE> < 0 )
+     SYSMESSAGE @0afe The damage is increased due to your fire susceptibility.
+     	   LOCAL.REVERSE = <eval (<TAG.ARM.EFFECT.RES_FIRE> * -1)>
+	   LOCAL.CHANGE = ((<argn1> * <local.reverse>) /100)
+       ARGN = (<argn> + <local.change>)
+    ENDIF
+	
+  ELSEIF (<eval <var.argn>> == 30) || (<eval <var.argn>> == 42) || (<eval <var.argn>> == 49)
+      //energy spells
+      IF (<TAG.ARM.EFFECT.RES_ENERGY> > 0 )
+	     IF (<TAG.ARM.EFFECT.RES_ENERGY> >= 99 )
+		     ARGN1 = ((<argn1>*98) / 100)
+	     ELSE
+		     ARGN1 = ((<argn1>*<TAG.ARM.EFFECT.RES_ENERGY>) / 100)
+	SYSMESSAGE @063e The damage is decreased due to your energy resistance.
+	     ENDIF
+      ELSEIF (<TAG.ARM.EFFECT.RES_ENERGY> < 0 )
+       sysmessage @063e The damage is increased due to your energy susceptibility.
+	   LOCAL.REVERSE = <eval (<TAG.ARM.EFFECT.RES_ENERGY> * -1)>
+	   LOCAL.CHANGE = ((<argn1> * <local.reverse>) /100)
+       ARGN = (<argn> + <local.change>)
+      ENDIF
+	  
+  ELSEIF (<eval <var.argn>> == 20) || (<eval <var.argn>> == 39)
+        //acid spells
+        IF (<TAG.ARM.EFFECT.RES_ACID> > 0 )
+	     IF (<TAG.ARM.EFFECT.RES_ACID> >= 99 )
+		     ARGN = ((<argn>*98) / 100)
+	     ELSE
+		     ARGN = ((<argn>/<TAG.ARM.EFFECT.RES_ACID>) / 100) 
+         SYSMESSAGE @0a43 The damage is decreased due to your acid resistance.
+	     ENDIF
+        ELSEIF (<TAG.ARM.EFFECT.RES_ACID> < 0 )
+         sysmessage @0a43 The damage is increased due to your acid susceptibility.
+         	   LOCAL.REVERSE = <eval (<TAG.ARM.EFFECT.RES_ACID> * -1)>
+	   LOCAL.CHANGE = ((<argn1> * <local.reverse>) /100)
+       ARGN = (<argn> + <local.change>)
+        ENDIF
+  ENDIF
+  ENDIF
+endif
+   
+ON = @Hit
+
+TAG.LASTTARGET = <SRC.UID>
+
+   if ( <SRC.UID> == <UID> )	// no combat with self
+      SRC.findlayer(layer_k_control).timer	= -1
+      SRC.ACTION				= -1
+      SRC.FLAGS					= <SRC.FLAGS> & ~statf_war
+      return 1
+   endif
+   if ( <SRC.ISNEWBIE> && <SRC.ISPLAYER> )
+         SYSMESSAGE You cannot hit new players.
+         RETURN 1
+   ENDIF
+   if ( <ISNEWBIE> && <SRC.ISPLAYER> )
+            SYSMESSAGE You cannot hit players as a newbie.
+            RETURN 1
+   ENDIF
+   IF strmatch("<SRC.TAG.ALIGNMENT>","<TAG.ALIGNMENT>")
+      IF <Faction_ISPROTECTED>
+	 SYSMESSAGE You cannot harm your own here.
+	 RETURN 1
+      ENDIF
+   ENDIF
+
+	IF ( <act.ISORDER> )
+            IF (<SRC.ISCHAOS>)
+             SRC.FLAGS = <SRC.FLAGS> & ~statf_criminal
+             ACT.FLAGS = <ACT.FLAGS> & ~statf_criminal
+            ENDIF
+	ELSEIF ( <act.ISCHAOS> )
+            IF (<SRC.ISORDER>)
+                SRC.FLAGS = <SRC.FLAGS> & ~statf_criminal
+      		ACT.FLAGS = <ACT.FLAGS> & ~statf_criminal
+            ENDIF
+	ENDIF 
+   // combat penalty for heavy armour
+   TAG.HIT_ACT	= <ACT.UID>
+   ACT	= <findlayer(layer_k_control).uid> 
+   if ( <ACT.UID> )
+      if ( <ACT.TAG0.AP_UPDATE> = 1 )
+         ACT.f_ap_recalc
+	 ACT.TAG.AP_UPDATE	= 
+      endif
+
+      VAR.AP_COMBAT	= <ACT.tag.ap_combat>
+      if ( !<isgm> | 0<tag.debug> )
+         if ( RAND(1000) < <VAR.AP_COMBAT> )
+	    dorand 3
+	       sysmessage You are too encumbered and miss the hit.
+	       sysmessage Your armour restricts your movements and you fail.
+	       sysmessage You find it hard to move and fail the hit.
+	       sysmessage You find it hard to move and fail the hit.
+	    enddo
+            ACT	= <TAG.HIT_ACT>
+	    return 1
+         endif 
+      endif
+   endif
+
+
+   if ( <action> == Skill_Archery )
+      ACT	= <findlayer(layer_hand2).uid>
+      CONSUME 1 <TAG.AMMO.<ACT.TYPE>.BASEID>
+   endif
+
+
+   SKILLCHECK_RUN	<ACTION>
+   ACT	= <TAG.HIT_ACT>
+
+   //Poisoning stuff
+   IF !( <ACT.FLAGS> & statf_invul )
+      IF ( <ARGO.MORE2> > 0 ) //Checks if weapon has poisoning charges
+         IF ( !(<ACT.FINDID.i_rune_poison.UID>) & !(<ACT.FINDID.i_poison_delay.UID>) ) & (<ACT.STR> <= 400)
+            
+            IF ((<UID.<ARGO.UID>.TYPE>=t_weapon_xbow) || (<UID.<ARGO.UID>.TYPE>=t_weapon_bow))
+               VAR.WEAPONSKILL = <ARCHERY>
+            ELSE
+               VAR.WEAPONSKILL = <FENCING>
+            ENDIF
+                              
+            IF  (<POISONING>>=300) && (<VAR.WEAPONSKILL>>=300) && (0<ARGO.TAG.POISONLEVEL>=01)
+               IF <ACT.ISPOISONED> = 0
+                  IF <POISONING_CHECKFAIL 1 <ARGO.UID> <ARGO.MORE2>>   
+                     NEWITEM i_poisoning1//creates the poison
+                     ACT.NEW.EQUIP//equips the poison on the player you hit
+                  ENDIF
+               ENDIF
+            ELSEIF (<POISONING>>=500) && (<VAR.WEAPONSKILL>>=500) && (0<ARGO.TAG.POISONLEVEL>=02)
+               IF <ACT.ISPOISONED> = 0
+                  IF <POISONING_CHECKFAIL 2 <ARGO.UID> <ARGO.MORE2>>
+	             NEWITEM i_poisoning2
+                     ACT.NEW.EQUIP
+                  ENDIF
+               ENDIF
+            ELSEIF (<POISONING>>=700) && (<VAR.WEAPONSKILL>>=700) && (0<ARGO.TAG.POISONLEVEL>=03)
+               IF <ACT.ISPOISONED> = 0
+                  IF <POISONING_CHECKFAIL 3 <ARGO.UID> <ARGO.MORE2>>
+	             NEWITEM i_poisoning3
+                     ACT.NEW.EQUIP
+                  ENDIF
+               ENDIF
+            ELSEIF (<POISONING>>=900) && (<VAR.WEAPONSKILL>>=900) && (0<ARGO.TAG.POISONLEVEL>=04)
+               IF <ACT.ISPOISONED> = 0
+                  IF <POISONING_CHECKFAIL 4 <ARGO.UID> <ARGO.MORE2>>
+	             NEWITEM i_poisoning4
+                     ACT.NEW.EQUIP
+                  ENDIF
+               ENDIF
+            ENDIF
+         ENDIF
+      ENDIF
+   ENDIF
+
+ //IF !( <ACT.FLAGS> & statf_invul )
+   // IF (0<ARGO.TAG.LEVEL> < 1 ) //Checks if weapon has level tag
+    //	IF (RAND(1000) = 1)
+    	//   UID.<ARGO.UID>.TAG.LEVEL = 1
+    	  // src.sysmessage Your weapon gains some experience
+    	//ENDIF     
+    //ELSEIF (<ARGO.TAG.LEVEL> < 3 )
+    	//IF (RAND(2000) = 1)
+    	  // UID.<ARGO.UID>.TAG.LEVEL = <eval <UID.<ARGO.UID>.TAG.LEVEL>+1>
+    	   //src.sysmessage Your weapon gains some experience
+    	//ENDIF       
+    //ELSEIF (<ARGO.TAG.LEVEL> < 5 )
+    	//IF (RAND(3000) = 1)
+    	  // UID.<ARGO.UID>.TAG.LEVEL = <eval <UID.<ARGO.UID>.TAG.LEVEL>+1>
+    	   //src.sysmessage Your weapon gains some experience
+    	//ENDIF       
+    //ELSEIF (<ARGO.TAG.LEVEL> < 8 )
+    	//IF (RAND(5000) = 1)
+    	  // UID.<ARGO.UID>.TAG.LEVEL = <eval <UID.<ARGO.UID>.TAG.LEVEL>+1>
+    	   //src.sysmessage Your weapon gains some experience
+    	//ENDIF 
+    //ELSEIF (<ARGO.TAG.LEVEL> < 10 )
+    	//IF (RAND(7000) = 1)
+    	  // UID.<ARGO.UID>.TAG.LEVEL = <eval <UID.<ARGO.UID>.TAG.LEVEL>+1>
+    	   //src.sysmessage Your weapon gains some experience
+    	//ENDIF       	
+    //ELSEIF (<ARGO.TAG.LEVEL> < 14 )
+    	//IF (RAND(9000) = 1)
+    	  // UID.<ARGO.UID>.TAG.LEVEL = <eval <UID.<ARGO.UID>.TAG.LEVEL>+1>
+    	   //src.sysmessage Your weapon gains some experience
+    	//ENDIF       	
+      //ELSEIF (<ARGO.TAG.LEVEL> < 17 )
+    	//IF (RAND(12000) = 1)
+    	  // UID.<ARGO.UID>.TAG.LEVEL = <eval <UID.<ARGO.UID>.TAG.LEVEL>+1>
+    	   //src.sysmessage Your weapon gains some experience
+    	//ENDIF     	
+    //ELSEIF (<ARGO.TAG.LEVEL> < 19 )
+    	//IF (RAND(15000) = 1)
+    	  // UID.<ARGO.UID>.TAG.LEVEL = <eval <UID.<ARGO.UID>.TAG.LEVEL>+1>
+    	   //src.sysmessage Your weapon gains some experience
+    	//ENDIF       	
+    //ELSEIF (<ARGO.TAG.LEVEL> < 20 )
+    	//IF (RAND(20000) = 1)
+    	  // UID.<ARGO.UID>.TAG.LEVEL = <eval <UID.<ARGO.UID>.TAG.LEVEL>+1>
+    	   //src.sysmessage @21 Your weapon has maxed out its experience, you can now rename it, use .rename to set its legendary name
+    	//ENDIF       	
+    //ENDIF
+   //ENDIF
+
+            
+   return <f_weapon_damage>   
+
+on=@SpellCast		// magery penalty for heavy armour
+// harming targetted spells 1 3 5 8 12 18 20 27 30 31 37 38 41 42 43 51 53 55 
+IF ((<argn> == 1)||(<argn> == 3)||(<argn> == 5 )||( <argn> == 8 )||( <argn> == 12 )||( <argn> == 18)||( <argn> == 20)||( <argn> == 27 )||( <argn> == 30 )||( <argn> == 31 )||( <argn> == 37 )||( <argn> == 38)||( <argn> == 41 )||( <argn> == 42 )||( <argn> == 43 )||( <argn> == 51 )||( <argn> == 53 )||( <argn> == 55))
+	IF (STRCMP(<SRC.ACT.NAME>, char CONTROL) == 0)
+		SRC.ACT = <UID.<TAG.LASTTARGET>>
+	ENDIF
+	TAG.LASTTARGET = <SRC.ACT.UID>
+endif
+
+IF ((<argn> == 4)||(<argn> == 6)||(<argn> == 7)||(<argn> == 9)||(<argn> == 10)||(<argn> == 11)||(<argn> == 15)||(<argn> == 16)||(<argn> == 17)||(<argn> == 29)||(<argn> == 36))
+	IF (STRCMP(<SRC.ACT.NAME>, char CONTROL) == 0)
+		//SRC.SAY HEAL GONNA MISS
+		SRC.ACT = <UID.<SRC.UID>>
+	ENDIF
+endif
+
+
+   if ( <npc> )
+      RETURN	0
+   endif
+   // remove shield on spell cast
+	   IF (<findlayer(layer_hand2)>)
+			findlayer(layer_hand2).unequip
+		
+	   ENDIF
+	   
+	   
+	   
+	 if ( <ISNEWBIE> && <SRC.ACT.ISPLAYER> )
+		IF !(strmatch("<SRC.ACT.NAME>","<SRC.NAME>")
+			SYSMESSAGE You cannot cast spells on players as a newbie.
+			return 1
+		ENDIF
+   endif
+	if ( <ISGM> )
+	   if ( <SRC.ACT.ISPLAYER> )
+		SERV.LOG <ACCOUNT.NAME>:<NAME> Magery is <magery> is casting <argn> on <SRC.ACT.NAME> <SRC.ACT.ACCOUNT.NAME>
+	   ENDIF
+	endif
+   if ( <FLAGS> & statf_freeze )
+      SYSMESSAGE You can't do much in your current state.
+      return 1
+   endif
+if ( <argn> >= 600 )	// necro
+
+      if ( <necromancy> >= <TAG.SKILLREQ> ) 
+        IF ( <KARMA> > -10000)
+       	   sysmessage Your karma suffers from using the dark arts
+       	   KARMA=<eval (<karma> - <TAG.SKILLREQ>)>
+        ENDIF  
+         //do spell
+            var.noimprove	= 0
+	    var.return		= 0
+	//    SKILLINIT_49
+   	//    SKILLCHECK_RUN Skill_Necromancy 
+	 //   SKILLCHECK_NOW Skill_Necromancy
+   	      return 0
+
+      ELSE
+         sysmessage Your skill isnt high enough for this
+         RETURN 1
+      ENDIF
+      sysmessage You cannot cast this
+ENDIF
+if ( <argn> >= 200 ) && ( <argn> <= 220 )	// chivalry
+
+   if ( !<isgm> && ( (<BODY> == c_man) || (<BODY> == c_woman) || (<BODY> == c_elf_female) || (<BODY> == c_elf_male) ) )
+     
+    
+
+     if ( (!<isgm> || 0<tag.debug> ) && !(<findlayer(layer_hand1).baseid> == i_spellbook_paladin) )
+        sysmessage You must hold a spellbook in order to cast.
+        return	1
+     endif
+   endif 
+   	 //   SKILLINIT_51
+     // 	    SKILLCHECK_RUN Skill_Chivalry
+	 //   SKILLCHECK_NOW Skill_Chivalry
+   return 0
+ENDIF
+   var.noimprove	= 0
+   var.return		= 0
+   SRC.SKILLINIT_25
+   if ( <var.return> != 0 )
+   
+      return 1
+   endif
+
+   VAR.SPELL_ACT	= <ACT>
+   if ( !<isgm> && ( (<BODY> == c_man) || (<BODY> == c_woman) || (<BODY> == c_elf_female) || (<BODY> == c_elf_male) ) )
+     
+     if ( <findtype(t_spellbook).uid> )
+        findtype(t_spellbook).equip
+     endif
+
+     if ( (!<isgm> || 0<tag.debug> ) && !(<findlayer(layer_hand1).baseid> == i_spellbook) && !(<findlayer(layer_hand1).baseid> == i_full_spellbook) && !(<findlayer(layer_hand1).baseid> == i_newbie_spellbook) && !(<findlayer(layer_hand1).baseid> == i_full_spellbook_changecolor) && !(<findlayer(layer_hand1).baseid> == i_book_supporter) )
+        sysmessage You must hold a spellbook in order to cast.
+        return	1
+     endif
+   endif
+ //  if ( <focus> > 30.0 )
+  //    actdiff += <eval <eval <focus> *25> /<skillclass.focus>>
+   //ENDIF
+
+   ACT	= <findlayer(layer_k_control).uid>
+   // The check for Armour penalty on mages.
+   if ( <ACT.uid> != 0 )
+      if ( <ACT.TAG0.AP_UPDATE> = 1 )
+         ACT.f_ap_recalc
+	 ACT.TAG.AP_UPDATE	= 0
+      endif
+      VAR.AP_MAGERY	= <ACT.tag.ap_magery>
+	  
+      if ( 0<TAG.DEBUG.AP> )
+         src.SAY AP for magery: <eval <var.ap_magery>>
+      endif
+
+      if ( !<isgm> || 0<tag.debug.ap> )
+         if ( RAND(1000) < <VAR0.AP_MAGERY> )
+		 
+	    f_spell_fizzle Your concentration fails due to being overweight and the spell fizzles.
+	    ACT	= <VAR.SPELL_ACT>
+	    return 1
+         endif 
+      endif
+   endif
+
+   ACT	= <VAR.SPELL_ACT>
+   if ( (<argn> == 32) || (<argn> == 52) )
+   if ( (<SRC.ACT.BASEID> == i_rune_marker) && (0<SRC.ACT.MORE1> == 1) )
+      VAR.RUNE		= <SRC.ACT>
+      SRC.NEWITEM	i_item_remover
+      SRC.ACT.TIMER	= 3
+      SRC.ACT.LINK	= <VAR.RUNE>
+      SRC.ACT.EQUIP
+      SRC.ACT		= <VAR.RUNE>
+   endif
+   endif
+
+   // 2) Recode specific spells here.
+   if ( 0 )
+   elseif ( <argn> == 22 )
+      f_spell_teleport
+      if ( <VAR.RETURN> )
+         return 1
+      endif
+   elseif ( <argn> == 32 )	// recall
+      IF ( <findid(i_ctt_townkey).uid> )
+         SYSMESSAGE Thou will have to travel the land to take <findid(i_ctt_townkey).name>.
+	 return 1
+      ELSEIF (<FINDID.i_delivery_memory.UID>)
+         SYSMESSAGE You can't cast recall! You'll spoil the delivery!
+         RETURN 1
+      ENDIF
+      f_spell_recall
+      return 1
+   elseif ( <argn> == 52 )
+      IF (<FINDID.i_delivery_memory.UID>)
+         SYSMESSAGE You can't cast a gate! You'll spoil the delivery!
+         RETURN 1
+      ENDIF
+      f_spell_gate_travel
+      return 1
+   elseif ( <argn> == 55 )
+      if (<SRC.ACT.UID>==<SRC.UID>)
+         SYSMESSAGE You cannot cast this spell on yourself!
+         return 1
+      endif
+   elseif ( <argn> == 56 )
+      SKILLMENU=sm_polymorph
+      consume 1 i_reag_blood_moss
+      consume 1 i_reag_mandrake_root
+      consume 1 i_reag_spider_silk
+      RETURN 1
+   elseif ( <argn> == 35 )
+      serv.log <ACCOUNT>:<NAME> is casting incognito on <SRC.ACT.NAME> <SRC.ACT.ACCOUNT> 
+   endif
+   
+   IF (( <argn> == 58 ) ||  ( <argn> == 40 ) ||  ( <argn> == 64) ||  ( <argn> == 63 ) ||  ( <argn> == 62 ) ||  ( <argn> == 61 ) ||  ( <argn> == 60 ))
+   
+			
+		SERV.NEWITEM=i_memory
+		NEW.P=<SRC.TARGP>
+		IF (<UID.<NEW.REGION.UID>.TYPE>==t_multi) || (<UID.<NEW.REGION.UID>.TYPE>==t_ship) 
+		serv.log <src.account> : <src.name> casted on multi <argn> at <p> target is <UID.<NEW.REGION.UID>.P>
+		IF (<UID.<NEW.REGION.UID>.UID> != <src.region.uid>)
+        IF (<SERV.SPELL(<ARGN1>).FLAGS> & spellflag_summon)
+            src.f_spell_fizzle
+			serv.log <src.name> try to cast spell no <argn> at <p> target is <UID.<NEW.REGION.UID>.P>
+            NEW.REMOVE
+            RETURN 1
+        ENDIF
+		ENDIF
+		ENDIF
+     
+	ENDIF
+	
+	IF (<ARGN>==49)
+			SERV.NEWITEM=i_memory
+			NEW.P=<SRC.TARGP>
+			IF (<UID.<NEW.REGION.UID>.TYPE>==t_multi)			
+				SRC.F_SPELL_FIZZLE
+				SERV.LOG <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> try to cast Chain Lightning at <P> target is <UID.<NEW.REGION.UID>.P>
+				RETURN 1
+			ENDIF
+			NEW.REMOVE
+	ENDIF
+			
+			
+
+   if ( <ISGM> && (0<TAG.DEBUG.SKILLS> == 0) )
+   elseif ( 0<var.noimprove> == 0 )
+      SKILLCHECK_NOW Skill_Magery
+   endif
+   
+   return 0
+
+on=@SpellEffect
+if ( <ISNEWBIE> && <SRC.ISPLAYER> )
+      f_spell_is_aggressive <ARGN>
+      IF (<VAR0.f_spell_is_aggressive> = 1)
+	    SRC.SYSMESSAGE You cannot harm new players.
+	    RETURN 1
+      ENDIF
+ENDIF
+//   SRC.FLAGS=<SRC.FLAGS>&~statf_reactive
+   IF strmatch("<SRC.TAG.ALIGNMENT>","<TAG.ALIGNMENT>")
+      f_spell_is_aggressive <ARGN>
+      IF (<VAR0.f_spell_is_aggressive> = 1)
+         IF <faction_ISPROTECTED>
+	    SRC.SYSMESSAGE You cannot harm your own here.
+	    RETURN 1
+         ENDIF
+      ENDIF
+   ENDIF
+   
+//   IF ( <argn1>==7 )
+//      SRC.SYSMESSAGE You shouldn't be successfully using the effect of Reactive Armor...
+//      SERV.LOG <SRC.ACCOUNT.NAME>:<SRC.NAME> successfully bypassed the Reactive Armor scripts until now...
+//      RETURN 1
+//   ENDIF
+   
+   IF ( <argn1> == 51 )
+      IF ( <RESTEST 1 i_fsdelay> )
+         SRC.SYSMESSAGE Your target is still to burnt for this spell to make a difference.
+         SYSMESSAGE The flame strike hits you yet again but to soon to cause any damage.
+         IF ( <SRC.MANA> >= 5 )
+            SRC.MANA=<SRC.MANA>+15
+			RETURN 1
+         ELSE
+			SRC.MANA=0
+			RETURN 1
+         ENDIF
+      ELSE
+         LOCAL.fsdelay=<UID>
+         SERV.NEWITEM i_fsdelay
+         TRY UID.<LOCAL.fsdelay>.EQUIP <NEW.UID>
+         NEW.TIMER=3
+      ENDIF
+	  
+	  // Prevent Para + Fs added by pink panther
+	  
+	  IF (<FINDID(i_rune_paralyze)>)&&(<FLAGS>&statf_freeze)
+			IF ( <FINDID.i_paralyzedelay> )
+				FINDID.i_paralyzedelay.timer=3
+			ELSE
+				LOCAL.paralyzedelay=<UID>
+				SERV.NEWITEM i_paralyzedelay
+				TRY UID.<LOCAL.paralyzedelay>.EQUIP <NEW.UID>
+				NEW.TIMER=3
+			ENDIF
+	  FINDID.I_RUNE_PARALYZE.REMOVE
+	  ENDIF
+	  
+	  
+	ELSEIF ( <argn1> == 57 )
+	  OBJ = <REGION.UID>
+	  IF (<EVAL (<P.Z> - <SRC.P.Z>)> >= 38) && ( <OBJ.TYPE> == t_multi ) && !(<MEMORYFINDTYPE.memory_fight>) && !(<MEMORYFINDTYPE(memory_harmedby).uid>) && !(<MEMORYFINDTYPE(MEMORY_IAGGRESSOR).uid>)
+		SRC.SYSMESSAGE One of your targets is not on the ground to feel the earthquake effects.
+		SYSMESSAGE You feel the earth trembles but receive no damage.
+		RETURN 1
+	  ENDIF
+      IF ( <RESTEST 1 i_eqdelay> )
+         SRC.SYSMESSAGE The earth still trembles beneath one of your targets...
+         SYSMESSAGE The earthquake hits you yet again but to soon to cause any damage.
+         IF ( <SRC.MANA> >= 5 )
+            //SRC.MANA=<SRC.MANA>+10
+			RETURN 1
+         ELSE
+	    SRC.MANA=0
+	    RETURN 1
+         ENDIF
+      ELSE
+         LOCAL.eqdelay=<UID>
+         SERV.NEWITEM i_eqdelay
+         TRY UID.<LOCAL.eqdelay>.EQUIP <NEW.UID>
+         NEW.TIMER=2
+      ENDIF
+	  
+	ELSEIF ( <argn1> == 55 ) // Meteor Swarm
+	  OBJ = <REGION.UID>
+	  IF (<EVAL (<P.Z> - <SRC.P.Z>)> >= 38) && ( <OBJ.TYPE> == t_multi ) && !(<MEMORYFINDTYPE.memory_fight>) && !(<MEMORYFINDTYPE(memory_harmedby).uid>) && !(<MEMORYFINDTYPE(MEMORY_IAGGRESSOR).uid>)
+		SRC.SYSMESSAGE One of your targets is way too above from you to feel the spell effects.
+		SYSMESSAGE You feel the meteor fall but they do not hit you.
+		RETURN 1
+	  ENDIF
+	  
+	ELSEIF ( <argn1> == 54 ) // Mass Dispel
+	  OBJ = <REGION.UID>
+	  IF (<EVAL (<P.Z> - <SRC.P.Z>)> >= 38) && ( <OBJ.TYPE> == t_multi ) && !(<MEMORYFINDTYPE.memory_fight>) && !(<MEMORYFINDTYPE(memory_harmedby).uid>) && !(<MEMORYFINDTYPE(MEMORY_IAGGRESSOR).uid>)
+		SRC.SYSMESSAGE One of your targets is way too above from you to feel the spell effects.
+		SYSMESSAGE You sense a spell but are not affected by it.
+		RETURN 1
+	  ENDIF
+	  
+	ELSEIF ( <argn1> == 49 ) // Chain lightning
+	  OBJ = <REGION.UID>
+	  IF (<EVAL (<P.Z> - <SRC.P.Z>)> >= 38) && ( <OBJ.TYPE> == t_multi ) && !(<MEMORYFINDTYPE.memory_fight>) && !(<MEMORYFINDTYPE(memory_harmedby).uid>) && !(<MEMORYFINDTYPE(MEMORY_IAGGRESSOR).uid>)
+		SRC.SYSMESSAGE One of your targets is way too above from you to feel the spell effects.
+		SYSMESSAGE You sense a lightining near you but are not affected by it.
+		RETURN 1
+	  ENDIF
+	  
+	ELSEIF ( <argn1> == 46 ) // Mass Curse
+	  OBJ = <REGION.UID>
+	  IF (<EVAL (<P.Z> - <SRC.P.Z>)> >= 38) && ( <OBJ.TYPE> == t_multi ) && !(<MEMORYFINDTYPE.memory_fight>) && !(<MEMORYFINDTYPE(memory_harmedby).uid>) && !(<MEMORYFINDTYPE(MEMORY_IAGGRESSOR).uid>)
+		SRC.SYSMESSAGE One of your targets is way too above from you to feel the spell effects.
+		SYSMESSAGE You sense a spell but are not affected by it.
+		RETURN 1
+	  ENDIF
+	  
+	ELSEIF (<argn1>==38)
+		IF ( <RESTEST 1 i_paralyzedelay> )
+			SRC.SYSMESSAGE Your target was recently frozen for this spell to make a difference.
+			SYSMESSAGE The paralyze hits you yet again but too soon to cause any effect.
+			IF ( <SRC.MANA> >= 5 )
+				SRC.MANA=<SRC.MANA>+15
+				RETURN 1
+			ELSE
+				SRC.MANA=0
+				RETURN 1
+			ENDIF
+		ENDIF
+   ELSEIF ( <argn1>==20 )
+      IF <ISPOISONED> = 1
+         SRC.SYSMESSAGE Your target is already poisoned therefore your spell has no effect.
+         SRC.MANA=<SRC.MANA>+8
+         RETURN 1
+      ENDIF
+   ENDIF
+
+   IF ( <argn1>==12 || <argn1>==11 || <argn1>==36 )
+      IF (( <SRC.ID>=c_man ) || ( <SRC.ID>=c_woman ))//note add an argn1 to check for harm spell
+         SRC.NEWITEM=i_speedor
+         SRC.ACT.TIMER=1 
+         SRC.ACT.LINK <SRC.UID>
+         SRC.ACT.P=<SRC.P>
+      ENDIF
+   ENDIF
+
+   IF <FINDID.M_factionHome.UID>
+      FINDID.M_factionHome.REMOVE
+   ENDIF
+   
+   IF <FINDID.M_Wedding_RING.UID>
+      FINDID.M_Wedding_RING.REMOVE
+   ENDIF
+    
+   VAR.ARGN	= <argn1>
+   VAR.ARGN2	= <argn2>
+   RETURN <f_spell_effect>
+
+
+
+on=@itemSpell			// when spells target items
+   if ( 0 )
+   ELSEIF ( <argn> == 59 )
+      if ( !<isgm> )
+        action = -1
+        return 1
+      endif
+   ELSEIF ( <argn> == 41 )
+      IF ( <act.baseID>=i_moongate_blue )
+         IF ( <act.timer> > 2 )
+   		act.REMOVE
+   		act.link.REMOVE
+   	 ENDIF
+      ENDIF	
+   ENDIF
+ 
+//ON=@ITEMEQUIPTEST 
+//if ( <isgm> )
+//OBJ=<ACT.UID>
+//src.sysmessage <obj.findlayer.29.uid.layer>
+//src.sysmessage UID is <obj>
+//src.sysmessage Layer is <obj.layer>
+//src.sysmessage act.type is <ACT.TYPE>
+//src.sysmessage obj.type is <obj.TYPE>
+//src.sysmessage Cont Layer is <obj.cont.layer>
+//src.sysmessage Cont Layer is <obj.act.layer>
+//src.sysmessage Cont Layer is <act.layer>
+//endif
+
+   
+on=@ItemEquip
+//   SRC.FLAGS=<SRC.FLAGS>&~statf_reactive
+   
+   if ( <npc> )
+      return 0
+   endif
+
+   if ( <ACT.TYPE> == t_shield )
+      if ( <ACT.f_shield_equip> )
+         return 0
+      endif
+   endif
+
+   if ( <findlayer(layer_k_control).uid> != 0 )		// armour penalty
+      findlayer(layer_k_control).timer		= -1
+      findlayer(layer_k_control).TAG.AP_UPDATE	= 1
+   endif
+
+
+   
+   f_armour_effect_update 0
+
+
+on=@ItemUnequip
+   if ( <npc> )
+      return 0
+   endif
+
+   if ( <findlayer(layer_k_control).uid> != 0 )		// armour penalty
+      findlayer(layer_k_control).timer		= -1
+      findlayer(layer_k_control).TAG.AP_UPDATE	= 1
+   endif
+  
+   f_armour_effect_update <ACT.UID>
+
+
+On=@DEATHCORPSE
+   Obj=<Argo.uid>
+   Obj.f_vendorhack_detecter_body <argo.uid>
+   
+
+
+ON=@Kill  //*OBJ-Victim*|*SRC-Killer*//
+
+//   SRC.FLAGS=<SRC.FLAGS>&~statf_reactive
+   OBJ=<ARGO.UID>
+   SERV.LOG Victim is <obj> <obj.name> Killer is <SRC.UID> <src.name> at <OBJ.P>
+
+   //if ( !<SRC.NPC> )
+     // IF (!<OBJ.NPC>)
+       //	   f_achievement_kills <SRC.UID>
+      //ELSE
+        // IF !( (<OBJ.BODY>=c_man) || (<OBJ.BODY>=c_woman) )
+      	  //  f_achievement_monsterkills <SRC.UID>
+         //ENDIF
+      //ENDIF
+   //ENDIF  
+
+	//IF !(0<SRC.TAG.LASTVICTIMUID> == <OBJ.UID>)
+	//IF (<OBJ.ISPLAYER>)
+	//DB.QUERY "SELECT `kills` FROM `stats` WHERE `uid` = '<SRC.UID>'"
+	//IF (0<DB.ROW.NUMROWS>)
+	//    FOR CURRENTROW 0 <eval <DB.ROW.NUMROWS>-1>
+	//    IF (<DB.ROW.<eval <LOCAL.CURRENTROW>>.kills>==0)
+	//    LOCAL.KILLSUPDATE=1
+	//    ELSE
+	//    LOCAL.KILLSUPDATE=<eval <DB.ROW.<eval <LOCAL.CURRENTROW>>.kills>+1>
+	//    ENDIF
+	//    END
+	//ENDIF
+	//DB.EXECUTE "UPDATE `stats` SET `kills`='<eval <LOCAL.KILLSUPDATE>>', `lastkilled`='<obj.name>' WHERE `uid`='<SRC.UID>';"
+	//ENDIF   
+	//ENDIF   
+   
+   //*No kills, karma, fame, or rep for killing summons
+   
+   IF ( <OBJ.FLAGS> & statf_conjured )
+   RETURN 1
+   ENDIF
+   
+//   IF (<OBJ.NPC>)
+//   IF (STRMATCH(*Doom*,<OBJ.REGION.NAME>))
+//   IF (<OBJ.UID> == <var.doomuid>)
+//   SERV.LOG bonus already rewarded
+//   ELSE
+//   SERV.NEWITEM i_reag_daemon_bone
+//  NEW.AMOUNT=<eval (<OBJ.maxhits>+<OBJ.dex>+<OBJ.int>)/46>
+//   SERV.LOG bonus is <eval (<OBJ.maxhits>+<OBJ.dex>+<OBJ.int>)/46>
+//   TRY UID.<OBJ.UID>.BOUNCE <NEW>
+//   var.doomuid = <obj.uid>
+//   ENDIF
+//   ENDIF
+//   ENDIF
+   
+   //*Assign Last Victim and Last Killer and calculate O/C REP CHANGE
+   IF (0<OBJ.TAG0.LASTKILLER> = 0)
+   IF (<OBJ.NPC> = 0)
+   
+         //IF ( (<OBJ.TAG0.PUBLIC>=1) && (<SRC.TAG0.PUBLIC>=1))
+            
+         //   LOCAL.VICTIMNAME = <OBJ.NAME>
+
+         //   LOCAL.PERIOD = <strpos 1 46 <LOCAL.VICTIMNAME>>
+         //   IF (<LOCAL.PERIOD> > 0)
+         //      LOCAL.STRINGLENGTH = <EVAL (STRLEN(<LOCAL.VICTIMNAME>) - <LOCAL.PERIOD>)>
+	 //      LOCAL.VICTIMNAME = <STRSUB 0 <LOCAL.PERIOD> <LOCAL.VICTIMNAME>><STRSUB <EVAL (<LOCAL.PERIOD>+1)> <LOCAL.STRINGLENGTH> <LOCAL.VICTIMNAME>>
+	 //   ENDIF
+
+         //   LOCAL.SPACE = <strpos 1 32 <LOCAL.VICTIMNAME>>
+         //   IF (<LOCAL.SPACE> > 0)
+         //      LOCAL.VICTIMNAME = <STRARG <LOCAL.VICTIMNAME>><STREAT <LOCAL.VICTIMNAME>>
+         //   ENDIF
+         //   
+            
+         //   LOCAL.KILLERNAME = <SRC.NAME>
+
+         //   LOCAL.PERIOD = <strpos 1 46 <LOCAL.KILLERNAME>>
+         //   IF (<LOCAL.PERIOD> > 0)
+         //      LOCAL.STRINGLENGTH = <EVAL (STRLEN(<LOCAL.KILLERNAME>) - <LOCAL.PERIOD>)>
+	 //      LOCAL.KILLERNAME = <STRSUB 0 <LOCAL.PERIOD> <LOCAL.KILLERNAME>><STRSUB <EVAL (<LOCAL.PERIOD>+1)> <LOCAL.STRINGLENGTH> <LOCAL.KILLERNAME>>
+	 //   ENDIF
+
+         //   LOCAL.SPACE = <strpos 1 32 <LOCAL.KILLERNAME>>
+         //   IF (<LOCAL.SPACE> > 0)
+         //      LOCAL.KILLERNAME = <STRARG <LOCAL.KILLERNAME>><STREAT <LOCAL.KILLERNAME>>
+         //   ENDIF
+
+                        
+         //   f_public_death ,<LOCAL.VICTIMNAME> ,<LOCAL.KILLERNAME>
+         //   serv.allclients f_public_announce ,<OBJ.NAME>,<SRC.NAME>,<OBJ.KILLS>,<SRC.KILLS>,<SRC.BRAIN>,<OBJ.REGION.NAME>
+         //ENDIF
+ 
+		
+		//IF (!(strcmpi("<STRSUB 0 12 <OBJ.REGION.NAME>>","Britain Terr")))
+		IF !(<SRC.TAG0.INEVENT>=1) 
+			DORAND 21
+			VAR.DEATHMSG <OBJ.NAME> was decapitated by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was impaled by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was torn in half by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> had his/her face torn off by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME>'s entrails were ripped out by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was destroyed by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME>'s skull was crushed by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was murdered by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was cut down the middle by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> watched their innards become outards by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME>'s plead for death was answered by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME>'s flailing about was finally stopped by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME>'s extremities were de-attached by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was eviscerated by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was turned into a pile of flesh by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was removed from the world by <SRC.NAME> at <OBJ.REGION.NAME>! 
+			VAR.DEATHMSG <OBJ.NAME>'s Meat was ripped off the bone by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was brutally dissected by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> was ionized by <SRC.NAME> at <OBJ.REGION.NAME>!
+			VAR.DEATHMSG <OBJ.NAME> let their arm get torn off by <SRC.NAME> at <OBJ.REGION.NAME>!		
+			VAR.DEATHMSG <OBJ.NAME> was killed by <SRC.NAME> at <OBJ.REGION.NAME>!
+			ENDDO
+			serv.allclients sysmessage @079c <VAR.DEATHMSG>
+			DISCORD_SEND 1 <VAR.DEATHMSG>
+		ENDIF
+		 
+         //*Log the primary killer
+         SERV.LOG <OBJ.ACCOUNT>:<OBJ.NAME>-<OBJ.UID> was killed by <SRC.ACCOUNT>:<SRC.NAME>-<SRC.UID>
+         
+         //*Save Victim and Killer
+         SRC.TAG.LASTVICTIM=<OBJ.NAME>
+         OBJ.TAG.LASTKILLER=<SRC.NAME>
+		 OBJ.TAG.LASTKILLERUID=<SRC.UID>
+         SRC.TAG.LASTVICTIMUID=<OBJ.UID>
+         //*Save the # of Killers
+         OBJ.TAG.NUM_KILLERS = <OBJ.f_count_killers>
+      ENDIF
+      
+      
+	  //if ((<SRC.FAME> > 5000) && (<OBJ.ISNPC>))
+
+      //elseif (<SRC.ISPLAYER>)
+		//SRC.f_calc_FAME <OBJ.UID>
+      //endif
+	  
+	  if (<SRC.ISPLAYER> && !(<OBJ.ISNPC>))
+		SRC.f_calc_FAME <OBJ.UID>
+	  endif
+	  
+   ENDIF
+   
+   
+   //*Reset kill timer if less than 4 kills
+//   IF !( <OBJ.ISFREEKILL <SRC.UID>> )
+//      IF ( <EVAL <SRC.KILLS>> < 4 )
+//         SRC.FINDID(b_kill_decayer).TIMER = 57600
+//      ENDIF
+//   ENDIF
+   
+   //*Killer gains alignment rep, loser loses alignment rep
+   //*Base rep change is 50.  If more than 1 killer, the rep is split
+   IF ((<SRC.ISORDER> && <OBJ.ISCHAOS> ) || ( <SRC.ISCHAOS> && <OBJ.ISORDER>))
+      
+      //*Sanity Check to make sure we don't divide by zero
+      IF ( <OBJ.TAG0.NUM_KILLERS> <= 0 )
+      OBJ.TAG.NUM_KILLERS = 1      
+      ENDIF
+	
+      //*Calculate the Rep Change
+      IF !(<OBJ.NPC>)
+	  
+	
+	  LOCAL.REP_CHANGE = <EVAL (200/<OBJ.TAG0.NUM_KILLERS>)>
+	 
+	  ELSE
+	//Lesser Rep Gain from NPCs
+          LOCAL.REP_CHANGE = <EVAL (5/<OBJ.TAG0.NUM_KILLERS>)>
+          ENDIF
+
+      //*Add/Subtract Rep
+
+	IF ((<SRC.ISMILITANT>) || (<OBJ.ISMILITANT>))
+	RETURN 1
+	ENDIF
+
+      IF (<SRC.TAG0.REP.ALIGNMENT> >= 500)
+        IF (<OBJ.TAG0.REP.ALIGNMENT> > 50)
+	   SERV.LOG :FACTION POINTS: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> has <EVAL <SRC.TAG.REP.ALIGNMENT>> <SRC.TAG.ALIGNMENT> points.
+      	   SRC.TAG0.REP.ALIGNMENT=<eval (<SRC.TAG0.REP.ALIGNMENT> + <LOCAL.REP_CHANGE>)>
+           SRC.SYSMESSAGE You gain some reputation.
+	   SERV.LOG :FACTION POINTS: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> now have <EVAL <SRC.TAG.REP.ALIGNMENT>> <SRC.TAG.ALIGNMENT> points.
+        ENDIF
+      ENDIF
+      IF (<SRC.TAG0.REP.ALIGNMENT> < 500)
+	   SERV.LOG :FACTION POINTS: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> has <EVAL <SRC.TAG.REP.ALIGNMENT>> <SRC.TAG.ALIGNMENT> points.
+           SRC.TAG0.REP.ALIGNMENT=<eval (<SRC.TAG0.REP.ALIGNMENT> + <LOCAL.REP_CHANGE>)>
+           SRC.SYSMESSAGE You gain some reputation.
+	   SERV.LOG :FACTION POINTS: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> now have <EVAL <SRC.TAG.REP.ALIGNMENT>> <SRC.TAG.ALIGNMENT> points.
+           ENDIF
+	  
+      OBJ.TAG0.REP.ALIGNMENT=<eval (<OBJ.TAG0.REP.ALIGNMENT> - 25)>
+      OBJ.SYSMESSAGE You lose some reputation.
+      
+      //*Avoid Negative Rep
+      IF (<SRC.TAG0.REP.ALIGNMENT> < 1)
+         SRC.TAG0.REP.ALIGNMENT=0
+      ELSEIF (<OBJ.TAG0.REP.ALIGNMENT> < 1)
+         OBJ.TAG0.REP.ALIGNMENT=0
+      ENDIF
+      
+   //ELSEIF (( <SRC.ISORDER> && <OBJ.ISORDER> ) || ( <SRC.ISCHAOS> && <OBJ.ISCHAOS> )) && !(<OBJ.NPC>))
+       
+//*Sanity Check to make sure we don't divide by zero
+     // IF ( <OBJ.TAG0.NUM_KILLERS> <= 0 )
+      //   OBJ.TAG.NUM_KILLERS = 1      
+      //ENDIF
+   
+//*Calculate the Rep Change
+      //LOCAL.REP_CHANGE = <EVAL (50/<OBJ.TAG0.NUM_KILLERS>)>
+      
+//*Add/Subtract Rep      
+      //SRC.TAG0.REP.ALIGNMENT=<eval (<SRC.TAG0.REP.ALIGNMENT> - <LOCAL.REP_CHANGE>)>
+      //OBJ.ALIGNMENT_NAME
+//SRC.SYSMESSAGE @25 TEST PHASE -- Your are not actually losing anything yet, but if you have gotten
+//SRC.SYSMESSAGE @25 this message in error please report the situation on the Bug Reports forum so we can
+//SRC.SYSMESSAGE @25 get problems fixed prior to enabling the actual loss.
+      //SRC.SYSMESSAGE @25 You lose some reputation for betraying your <VAR.ALIGNMENT_NAME> <OBJ.SEX Brother/Sister>.
+      
+   //*Avoid Negative Rep
+     //IF (<SRC.TAG0.REP.ALIGNMENT> < 1)
+      //   SRC.TAG0.REP.ALIGNMENT=0
+      //ENDIF
+    
+
+//ELSEIF (( <SRC.ISBROTHERHOOD> && <OBJ.ISBROTHERHOOD> ) && !(<OBJ.NPC>))
+
+//*Sanity Check to make sure we don't divide by zero
+//IF ( <OBJ.TAG0.NUM_KILLERS> <= 0 )
+//OBJ.TAG.NUM_KILLERS = 1      
+//ENDIF
+
+//*Calculate the Rep Change
+//LOCAL.REP_CHANGE = <EVAL (50/<OBJ.TAG0.NUM_KILLERS>)>
+
+//*Add/Subtract Rep      
+//SRC.TAG0.REP.ALIGNMENT=<eval (<SRC.TAG0.REP.ALIGNMENT> - <LOCAL.REP_CHANGE>)>
+//OBJ.ALIGNMENT_NAME
+//SRC.SYSMESSAGE @0770 You lose some reputation for betraying your <VAR.ALIGNMENT_NAME> <OBJ.SEX Brother/Sister>.
+      
+//*Avoid Negative Rep
+//IF (<SRC.TAG0.REP.ALIGNMENT> < 1)
+//SRC.TAG0.REP.ALIGNMENT=0
+//ENDIF
+
+
+      //SRC.f_calc_KARMA <OBJ.UID>
+      //SRC.f_calc_KILLS <OBJ.UID>
+   ELSE
+      SRC.f_calc_KARMA <OBJ.UID>
+      SRC.f_calc_KILLS <OBJ.UID>
+   ENDIF
+
+    //SERV.NEWITEM i_memory
+	//NEW.TYPE=t_eq_memory_obj
+	//NEW.NAME=<SRC.NAME>
+	//NEW.LINK=<SRC.UID>
+	//NEW.COLOR=035
+	//NEW.MOREP=<OBJ.P>
+	//NEW.LAYER=layer_special
+	//NEW.CONT=<OBJ.UID>
+	//NEW.TIMER=300
+	
+   RETURN 1   
+
+ON=@FAMECHANGE
+if (<tag0.nofameloss>==1)
+tag.nofameloss=
+return 1
+endif
+
+ON=@Death
+
+ IF ((<SRC.ISORDER> && <ACT.ISCHAOS>) || (<SRC.ISCHAOS> && <ACT.ISORDER>))
+
+  IF ((<SRC.ISMILITANT>) && (<ACT.ISMILITANT>))
+
+   IF ((<SRC.ISMILITANTBRITAIN>) && !(<ACT.ISMILITANTBRITAIN>)) // britain militia
+
+   ACT.TAG.REP.ALIGNMENT = <EVAL (<ACT.TAG.REP.ALIGNMENT> + 100)>
+   ACT.SYSMESSAGE You gain some reputation. [Debug Message 123]
+   SRC.TAG.REP.ALIGNMENT = <EVAL (<SRC.TAG.REP.ALIGNMENT> - 50)>
+   SRC.SYSMESSAGE You lose some reputation. [Debug Message 456]
+   ENDIF
+
+ IF ((<SRC.ISMILITANTYEW>) && !(<ACT.ISMILITANTYEW>)) // yew militia
+
+   ACT.TAG.REP.ALIGNMENT = <EVAL (<ACT.TAG.REP.ALIGNMENT> + 100)>
+   ACT.SYSMESSAGE You gain some reputation. [Debug Message 789]
+   SRC.TAG.REP.ALIGNMENT = <EVAL (<SRC.TAG.REP.ALIGNMENT> - 50)>
+   SRC.SYSMESSAGE You lose some reputation. [Debug Message 910]
+   ENDIF
+
+ IF ((<SRC.ISMILITANTMINOC>) && !(<ACT.ISMILITANTMINOC>)) // minoc militia
+
+   ACT.TAG.REP.ALIGNMENT = <EVAL (<ACT.TAG.REP.ALIGNMENT> + 100)>
+   ACT.SYSMESSAGE You gain some reputation. [Debug Message 654]
+   SRC.TAG.REP.ALIGNMENT = <EVAL (<SRC.TAG.REP.ALIGNMENT> - 50)>
+   SRC.SYSMESSAGE You lose some reputation. [Debug Message 876]
+   ENDIF
+
+ IF ((<SRC.ISMILITANTTRINSIC>) && !(<ACT.ISMILITANTTRINSIC>)) // trinsic militia
+
+   ACT.TAG.REP.ALIGNMENT = <EVAL (<ACT.TAG.REP.ALIGNMENT> + 100)>
+   ACT.SYSMESSAGE You gain some reputation. [Debug Message 321]
+   SRC.TAG.REP.ALIGNMENT = <EVAL (<SRC.TAG.REP.ALIGNMENT> - 50)>
+   SRC.SYSMESSAGE You lose some reputation. [Debug Message 123]
+   ENDIF
+  ENDIF
+ ENDIF
+
+//SENDPACKET 02c 00 // you are dead
+
+//serv.log db query
+//DB.QUERY "SELECT `deaths` FROM `stats` WHERE `uid` = '<SRC.UID>'"
+//IF (0<DB.ROW.NUMROWS>)
+//    FOR CURRENTROW 0 <eval <DB.ROW.NUMROWS>-1>
+//    IF (0<DB.ROW.<eval <LOCAL.CURRENTROW>>.deaths>==0)
+//    LOCAL.KILLSUPDATE=1
+//   ELSE
+//    LOCAL.KILLSUPDATE=<eval <DB.ROW.<eval <LOCAL.CURRENTROW>>.deaths>+1>
+//    ENDIF
+//    END
+//ENDIF
+//serv.log db execute
+//DB.EXECUTE "UPDATE `sphere`.`stats` SET `deaths`='<eval <LOCAL.KILLSUPDATE>>' WHERE `uid`='<SRC.UID>';
+
+
+	//faction robe remove
+
+//   SRC.FLAGS=<SRC.FLAGS>&~statf_reactive
+   SRC.TAG.LASTKILLER=
+   
+   //Protection against bug: Lock down magic jewelry and wear, it newbies just for the next death - Wig
+   IF ( (<SRC.FINDLAYER.LAYER_COLLAR.BASEID>==i_skill_necklace_1) || (<SRC.FINDLAYER.LAYER_COLLAR.BASEID>==i_skill_necklace_2) || (<SRC.FINDLAYER.LAYER_COLLAR.BASEID>==i_skill_necklace_3) )
+      SRC.FINDLAYER.LAYER_COLLAR.ATTR=020
+   ENDIF
+   IF (<SRC.FINDLAYER.LAYER_EARS.BASEID>==i_skill_earrings)
+      SRC.FINDLAYER.LAYER_EARS.ATTR=020
+   ENDIF
+   IF (<SRC.FINDLAYER.LAYER_WRIST.BASEID>==i_skill_bracelet)
+      SRC.FINDLAYER.LAYER_WRIST.ATTR=020
+   ENDIF
+   IF (<SRC.FINDLAYER.LAYER_RING.BASEID>==i_skill_ring)
+      SRC.FINDLAYER.LAYER_RING.ATTR=020
+   ENDIF
+
+   // protection against BUG in skill items
+   SRC.findlayer.layer_collar.unequip
+   SRC.findlayer.layer_ring.unequip
+   SRC.findlayer.layer_wrist.unequip
+   SRC.findlayer.layer_ears.unequip
+   SRC.findlayer.layer_dragging.unequip
+   
+   //Rebirth check
+   IF ( <SRC.GET_REBIRTH> <= 0 )
+   ELSE
+      LOCAL.REBIRTHCHANCE=<eval rand(100)>
+      IF (<LOCAL.REBIRTHCHANCE> <= <SRC.GET_REBIRTH> )
+         SRC.EMOTE rise again from the ashes
+         SRC.EFFECT	= 3, i_fire_column, 6, 15, 1
+         SRC.HITS	= <eval (((<SRC.STR> * 2) / 3)+1)>
+         SRC.TAG.REBIRTH.COUNT	= <eval (<SRC.TAG.REBIRTH.COUNT>+1)>
+         SRC.TAG.REBIRTH.TIME	= <TIME>
+         RETURN 1
+      ENDIF
+   ENDIF
+   
+	ref1=<attacker.last>
+	if (<ref1.npc>>0)
+	tag.nofameloss=1
+	endif
+	
+	IF STRMATCH("Imperial Newbie Dungeon","<SRC.REGION.NAME>")
+	SRC.GO Imperial Newbie Dungeon
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have been teleported to the Newbie Dungeon entrance and Resurrected!
+	RETURN 1
+	ENDIF
+	
+	IF STRMATCH( "Despise", "<SRC.REGION.NAME>" )
+	SRC.GO a_despise_entryway_1
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have been teleported to Entrance of Despise and Resurrected!
+	RETURN 1
+	ENDIF
+	
+	IF STRMATCH( "Pink Panther Winter Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 4097,523,0,20
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+	
+	IF STRMATCH( "Pink Panther 1vs1 Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 5206,1757,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+	
+	IF STRMATCH( "Swamp 1vs1 Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 5349,1602,0,20
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+
+	IF STRMATCH( "Fire Team PvP Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 5690,1347,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+
+	IF STRMATCH( "TK Boxing Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 2021,2877,0,1
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+
+	IF STRMATCH( "Carneige 1vs1 Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 5947,330,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF		
+
+	IF STRMATCH( "Pink Panther FFA Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 5309,727,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF		
+	
+	IF STRMATCH( "Street Fighting Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 592,2206,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF		
+	
+	IF STRMATCH( "Team PvP Orc Camp", "<SRC.REGION.NAME>" )
+	SRC.GO 2171,1355,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+
+	IF STRMATCH( "Ray's Team PvP Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 2087,811,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+
+	IF STRMATCH( "Soul Fly and Carneige Trap Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 6091,444,-22,20
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+	
+	IF STRMATCH( "Britain PvP Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 1315,1800,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF		
+	
+	IF STRMATCH( "Britain Graveyard Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 1383,1497,10,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+
+	IF STRMATCH( "Pink Panther's Royal Rumble", "<SRC.REGION.NAME>" )
+	SRC.GO 4077,319,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+
+	IF STRMATCH( "Olbrien's Nujel'm Team PvP Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 3732,1297,0,20
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+		
+	
+	IF STRMATCH( "Olbrien's Xpot Nujel'm Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 3778,1294,0,20
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF
+	
+	IF STRMATCH( "Olbrien's Florish Team PvP Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 3651,1329,0,20
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+	
+	IF STRMATCH( "Olbrien's Castle Defense", "<SRC.REGION.NAME>" )
+	SRC.GO 1516,1429,15,20
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF		
+
+	
+	IF STRMATCH( "Olbrien's Despise Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 1328,1072,0,20
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+	
+	
+	IF STRMATCH( "Ray and Olbrien's Team PvP Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 2087,801,0,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+	
+
+	IF STRMATCH( "Series Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 5255,4061,51,10
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF	
+	
+	IF STRMATCH( "Olbrien's XPoT t2a Arena", "<SRC.REGION.NAME>" )
+	SRC.GO 5605,2759,48,20
+	SRC.hits = <str>
+	SRC.mana = <int>
+	SRC.SYSMESSAGE @0afe You have died and resurrected!
+	RETURN 1
+	ENDIF		
+	
+    OBJ=<SRC.REGION.UID>
+	IF (<OBJ.TYPE>==t_multi)
+		IF (<OBJ.BASEID>==i_town_spar_pit) || (<OBJ.BASEID>==i_large_spar_pit)
+				SRC.HITS = <SRC.STR>
+				SRC.MANA = <SRC.INT>
+				SRC.STAM = <SRC.DEX>
+				SRC.GO <OBJ.LINK.P>
+				SRC.EMOTE died and got resurrected!
+				RETURN 1
+		ENDIF
+	ENDIF
+	
+	REF1=<ATTACKER.LAST>
+	IF (<SRC.FINDID.i_pvp_talisman>) && !(<EVAL <SRC.TAG0.INEVENT>>==1) && !(<EVAL <SRC.TAG0.boopvper>>==1)
+		FORINSTANCES i_pvp_talisman
+			REMOVE
+		ENDFOR
+		IF (<REF1.ISPLAYER>)
+			IF (<REF1.FINDID.i_rune_incognito.UID>)
+				REF1.FINDID.i_rune_incognito.REMOVE
+			ENDIF
+			SERV.NEWITEM=i_pvp_talisman
+			TRY UID.<REF1.UID>.EQUIP <NEW.UID>
+			SERV.ALLCLIENTS SYSMESSAGE @07a1 <REF1.NAME> is now the owner of the PvP Talisman!
+			SERV.LOG :PVP TALISMAN: <REF1.UID> <REF1.ACCOUNT> <REF1.NAME> is now the owner of the PvP Talisman.
+		ELSE
+			IF (<SRC.FINDID.i_rune_incognito.UID>)
+				SRC.FINDID.i_rune_incognito.REMOVE
+			ENDIF
+			SERV.ALLCLIENTS SYSMESSAGE @07a1 <SRC.NAME> LOST the PvP Talisman and it now has no owner.
+			SERV.LOG :PVP TALISMAN: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> LOST the PvP Talisman and it now has no owner.
+		ENDIF
+		SRC.TAG.TALISMANCHECK=
+		SRC.HITS = <SRC.STR>
+		SRC.MANA = <SRC.INT>
+		SRC.STAM = <SRC.DEX>
+		SRC.GO Lycaeum
+		SRC.EMOTE have been protected by the PvP Talisman!
+		SERV.LOG :PVP TALISMAN: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> has been protected by the PvP Talisman and teleported to Lycaeum.
+		RETURN 1
+	ENDIF
+	 
+   SRC.f_close_trade
+   SRC.f_drop_skargard
+
+   f_convert_to_harmedby
+  
+   RETURN 0
+
+ON=@MsgPending //custom trigger to fix reply notifications
+	src.dialog d_pm_notify
+
+ON=@SKILLMAKEITEM
+   IF ( <ACT.QUALITY> <  70 )
+      DEBUGSAY SkillMakeItem Fired: [<ACT>:<ACT.NAME>:<ACT.QUALITY>] Lame item
+   ELSEIF ( <ACT.QUALITY> < 100 )
+      DEBUGSAY SkillMakeItem Fired: [<ACT>:<ACT.NAME>:<ACT.QUALITY>] Not so lame item but still lame
+   ELSEIF ( <ACT.QUALITY> < 150 )
+      DEBUGSAY SkillMakeItem Fired: [<ACT>:<ACT.NAME>:<ACT.QUALITY>] Mediocre
+   ELSEIF ( <ACT.QUALITY> < 199 )
+      DEBUGSAY SkillMakeItem Fired: [<ACT>:<ACT.NAME>:<ACT.QUALITY>] Good item!
+   ELSEIF (<ACT.QUALITY> >= 199)
+      DEBUGSAY SkillMakeItem Fired: [<ACT>:<ACT.NAME>:<ACT.QUALITY>] This is an item of exceptional quality!
+   ELSE
+      MESSAGE Boing, you broke it! Page a GM!
+   ENDIF
+   
+ON=@Login
+tag.iwillkickyou=1
+f_sendpacket_orion
+src.timerf 5, f_orionexclusive
+
+
+
+
+IF !(<SERV.RTIME.FORMAT %d>==<EVAL <SRC.TAG0.VOTE_LOGIN_DIALOG>>)
+ //SRC.DIALOG d_votenow
+ SRC.TAG.VOTE_LOGIN_DIALOG=<SERV.RTIME.FORMAT %d>
+ENDIF
+
+IF (<SRC.ACCOUNT.PLEVEL> >= 2) & !(<SRC.ISEVENT.e_staff>)
+SRC.EVENTS +e_staff
+ENDIF
+
+skillbonus_check
+
+//IF !(STRMATCH("<SRC.CLIENTVERSION>","5.0.9"))
+//SRC.DIALOG d_wrongclient
+//SRC.SYSMESSAGE @0487 Please, verify your client version and try again. You will be disconnected in 10 seconds.
+//TIMERF 10,disconnect_now
+//ENDIF
+
+IF !(<ACCOUNT.TAG0.REGISTERED> == 01)
+DIALOG d_register
+SERV.B @90 Greetings, <SRC.NAME>! Let us take a moment to welcome him to Imperial UO!
+ELSE
+//SRC.DIALOG news_page
+ENDIF
+
+IF (<SRC.FINDID.i_memory_donatorskills.TIMER> == -1)
+SRC.FINDID.i_memory_donatorskills.REMOVE
+ENDIF
+
+IF (<SRC.ISMERCENARY>)
+EVENTS +e_mercenary_rank
+ENDIF
+
+IF (<SRC.ISSYNDICATE>)
+EVENTS +e_syndicate_rank
+ENDIF
+
+IF (<SRC.ISBROTHERHOOD>)
+EVENTS +e_brotherhood_rank
+ENDIF
+
+IF (<SRC.ISORDER>)
+EVENTS +e_order_rank
+ENDIF
+
+IF (<SRC.ISCHAOS>)
+EVENTS +e_chaos_rank
+ENDIF
+
+IF <TAG0.badname>
+TIMERF 3, namechange
+ENDIF
+
+IF (<SRC.ACCOUNT.totalconnecttime> > 1000)
+SRC.EVENTS +e_rating_system
+ENDIF
+
+TAG.ISONLINE=YES
+
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET1>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET1=
+   ENDIF
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET2>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET2=
+   ENDIF
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET3>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET3=
+   ENDIF
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET4>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET4=
+   ENDIF
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET5>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET5=
+   ENDIF
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET5>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET5=
+   ENDIF
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET6>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET6=
+   ENDIF
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET7>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET7=
+   ENDIF
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET8>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET8=
+   ENDIF
+   IF !(<ACCOUNT.TAG0.ACHIEVEMENTS.SET9>)
+      ACCOUNT.TAG0.ACHIEVEMENTS.SET9=
+   ENDIF
+
+	IF <list.<src.account>_message.COUNT>
+		SRC.DIALOG d_pm_notify
+	ENDIF
+
+//   IF (<SRC.FINDID.i_memory_donatorskills>)
+//      SRC.FINDID.i_memory_donatorskills.TIMER=<SRC.TAG.DONATORSKILLS.BONUSTIME>
+//      SRC.SYSMESSAGE @33 You are receiving donator double skill gain for another <EVAL <SRC.FINDID.i_memory_donatorskills.TIMER> / 60> minutes!
+//   ENDIF
+   
+IF !(<src.tag0.famenuke> == 1)
+src.fame = 1000
+src.tag.famenuke = 1
+ENDIF
+
+IF ( <src.BODY> = c_elf_male ) 
+      src.BODY = c_man
+      src.OBODY = c_man
+      src.COLOR=colors_skin
+      src.OSKIN=colors_skin
+ELSEIF ( <src.BODY> = c_elf_female )
+      src.BODY = c_woman
+      src.OBODY = c_woman
+      src.COLOR=colors_skin
+      src.OSKIN=colors_skin
+ENDIF
+IF ( <src.OBODY> = c_elf_male)
+      src.BODY = c_man
+      src.OBODY = c_man
+      src.COLOR=colors_skin
+      src.OSKIN=colors_skin
+ELSEIF ( <src.OBODY> = c_elf_female )
+      src.BODY = c_woman
+      src.OBODY = c_woman
+      src.COLOR=colors_skin
+      src.OSKIN=colors_skin
+ENDIF
+// IF ((<src.account.totalconnecttime> < 5000) && (<src.skilltotal> < 450.1))
+//   IF !(0<src.tag.newbieout> == 1)
+//   SRC.EVENTS +e_newbie
+//   SRC.SYSMESSAGE @0793 Welcome new player, you currently have new player status, which means
+//   SRC.SYSMESSAGE @0793 You cannot harm or be harmed by players, to opt out please type .newoptout
+//   ENDIF
+// ELSE
+//   IF !(0<src.tag.newbieout> == 1)
+//   SRC.EVENTS -e_newbie
+//   SRC.SYSMESSAGE @0793 You are no longer a new player.
+// 	src.tag.newbieout = 1
+//   ENDIF
+// ENDIF
+
+if ( !strmatch( "Ice*", "<SRC.REGION.NAME>" ) )
+   if ( <src.findid(m_kell_periodic).uid> )
+      src.findid.m_kell_periodic.remove
+   endif
+endif
+
+// --The following code is for enabling tooltips alongside the code in sphere_serv_triggers.scp--
+
+//IF (<SRC.ACCOUNT.TAG.TOOLTIPS>==1)
+//   SRC.SYSMESSAGE @83 You have AoS-Style tooltips and Buff manager set to on. Please use .aostooltips to turn them off.
+//ELSE
+//   SRC.SYSMESSAGE @83 You have AoS-Style tooltips and Buff manager set to off. Please use .aostooltips to turn them on.
+//ENDIF
+
+// --End segment--
+//f_msgservice
+
+
+
+// ARGN1=1	//DON'T OPEN MESSAGE OF THE DAY GUMP
+
+SRC.FLAGS = (<src.FLAGS> | statf_spiritspeak)
+IF (<SRC.FINDID.m_forgive.UID>)
+   SRC.FINDID.m_forgive.remove
+ENDIF
+SRC.TAG.CURRENTVENDOR=
+
+
+if ( !<SRC.FINDID(b_kill_decayer)> )
+   SRC.NEWITEM 		b_kill_decayer
+   SRC.ACT.DISPID	= i_memory
+   SRC.ACT.EQUIP
+endif
+
+if !( 0<SRC.TAG.kills.logout> )
+      SRC.TAG.kills.logout	= <src.kills>
+endif
+
+src.kills = <src.tag.kills.logout>
+
+if !( 0<SRC.TAG.killdecay.timer> )
+   if ( <EVAL <SRC.KILLS>> < 4 ) 
+        SRC.TAG.killdecay.timer	= 57600
+   elseif ( <EVAL <SRC.KILLS>> < 40 )
+        SRC.TAG.killdecay.timer	= 28800
+   else
+        SRC.TAG.killdecay.timer= 14400
+   endif
+endif
+
+SRC.FINDID(b_kill_decayer).TIMER = <src.tag.killdecay.timer>
+
+if ( !strcmp( "<SRC.ACCOUNT>", "Administrator" ) )
+      SRC.SYSMESSAGE This account is disabled, fuck off.
+      DISCONNECT_now
+      return 1
+endif
+
+F_LOGIN_INIT_TAGS
+   
+src.f_control_enable   
+
+SERV.LOG <SRC.CLIENTVERSION>/<SRC.REPORTEDCLIVER>
+IF strmatch("<SRC.CLIENTVERSION>","2.0.0")
+      SRC.ACCOUNT.RESDISP=1
+ELSEIF strmatch("2*","<SRC.CLIENTVERSION>")
+      SRC.ACCOUNT.RESDISP=1
+ELSEIF strmatch("4*","<SRC.CLIENTVERSION>")
+      SRC.ACCOUNT.RESDISP=5
+ELSEIF strmatch("5*","<SRC.CLIENTVERSION>")
+      SRC.ACCOUNT.RESDISP=5
+ELSEIF strmatch("6*","<SRC.CLIENTVERSION>")
+      SRC.ACCOUNT.RESDISP=5      
+ELSEIF strmatch("2*","<SRC.REPORTEDCLIVER>")
+      SRC.ACCOUNT.RESDISP=1
+ELSEIF strmatch("4*","<SRC.REPORTEDCLIVER>")
+     SRC.ACCOUNT.RESDISP=5
+ELSEIF strmatch("5*","<SRC.REPORTEDCLIVER>")
+      SRC.ACCOUNT.RESDISP=5
+ELSEIF strmatch("6*","<SRC.REPORTEDCLIVER>")
+      SRC.ACCOUNT.RESDISP=5
+ENDIF
+IF strmatch("<SRC.CLIENTVERSION>","0.0.0")
+   	IF strmatch("0.0.0","<SRC.REPORTEDCLIVER>")
+ 	 SERV.LOG POSSIBLE HAX: <SRC.ACCOUNT> attempting login with suspicious client - CHECK THEIR LOGS!
+	 SRC.EVENTS +e_logs
+	 //SRC.JAIL
+	 //SRC.DISCONNECT
+ 	ENDIF
+ENDIF
+IF strmatch("<SRC.CLIENTVERSION>","")
+   	IF strmatch("","<SRC.REPORTEDCLIVER>")
+ 	SERV.LOG POSSIBLE HAX: <SRC.ACCOUNT> attempting login with suspicious client - CHECK THEIR LOGS!
+	SRC.EVENTS +e_logs
+ 	ENDIF
+ENDIF
+
+IF strmatch("<SRC.ACCOUNT>","PEPE")
+	SRC.EVENTS +e_logs
+ENDIF
+IF strmatch("<SRC.ACCOUNT>","Sferfens")
+	SRC.EVENTS +e_logs
+ENDIF
+ 
+if (0<src.tag.flux> > 20)
+      serv.log <src.account>'s char <src.name> has more than 20 fluxes.
+endif
+
+if ( <fix_account_eof> )
+      return 1
+endif
+
+SRC.findlayer.layer_k_periodic.timer	= 3
+SRC.TAG.RESTORE.KILLS	= 1
+SRC.UPDATE_SERVER_COUNT
+
+SERV.LOG <SRC.SKILLTOTAL>
+IF (<SRC.SKILLTOTAL> == 1000)
+	SRC.HTMLDIALOG d_new_player_1
+ENDIF
+   
+IF ( <SRC.REGION.DEFNAME>=a_mystic_chamber_1 )
+      SRC.shardintro
+ENDIF
+
+IF !(<SRC.ISGM>)
+IF (<EVAL <SRC.OSTR>> <= (<EVAL <UID.<SRC.FINDID.m_kell_control.UID>.TAG.STR_TMP> - 20>))
+IF (<EVAL <SRC.OINT>> >= (<EVAL <UID.<SRC.FINDID.m_kell_control.UID>.TAG.INT_TMP> + 30>))
+        SERV.LOG BROKEN: Orig Int <EVAL <SRC.OINT>> Desired <EVAL <UID.<SRC.FINDID.m_kell_control.UID>.TAG.INT_TMP>> ~~ Orig Str <SRC.OSTR> Desired <EVAL <UID.<SRC.FINDID.m_kell_control.UID>.TAG.STR_TMP>>
+        SRC.OINT=<EVAL <UID.<SRC.FINDID.m_kell_control.UID>.TAG.INT_TMP>>
+        SRC.OSTR=<EVAL <UID.<SRC.FINDID.m_kell_control.UID>.TAG.STR_TMP>>
+        SERV.LOG Fixed to <SRC.OINT> Int, <SRC.OSTR> Str.
+        SRC.MESSAGE @50 Your Str and Int have been fixed. If this is a problem, please page.
+
+ENDIF
+ENDIF
+ENDIF
+
+   if ( <eval (<oSTR> + <oINT> + <oDEX>)> > 275 )
+    if !(<isgm> || <iscouns>)
+      //src.sysmessage @33 PLEASE PAGE A GM TO GET YOUR STATS SORTED
+      SERV.LOG :DODGYSTATS: <src.name> <src.account> <src.uid> dodgy stats please investigate TOTAL:(<eval ((<oSTR> + <oINT> + <oDEX>) - <eval <SRC.TAG.FLUX>>)>) Fluxes: <eval <SRC.TAG.FLUX>>
+    ENDIF
+   endif
+   
+   //if ( <DB.connected> )
+	//	DB.EXECUTE "call SphereLoginUser('<src.uid>')"
+	//ENDIF
+
+
+ON=@Logout
+
+TAG.ISONLINE=NO
+
+//   IF (<SRC.FINDID.i_memory_donatorskills>)
+//      SRC.TAG.DONATORSKILLS.BONUSTIME=<SRC.FINDID.i_memory_donatorskills.TIMER>
+//   ENDIF
+
+//if ( <DB.connected> )
+//		DB.EXECUTE "call SphereLogoutUser('<src.uid>')"
+//ENDIF
+
+//SRC.EVENTS -e_logs
+
+SRC.EVENTS -e_newbie
+   IF <src.findid.b_teleport.uid>
+      SERV.LOG :teleport: Account:<src.account> UID:<src.uid> Name:<src.name> logged out during teleport
+	  serv.log Argn2: <ARGN2>
+   ENDIF
+   IF (0<src.tag.logoutshow> == 1)
+   src.events +e_loggedout
+   ENDIF
+   SRC.TAG.CURRENTVENDOR=
+   IF <src.findid.i_check_patch.uid>
+      src.findid.i_check_patch.remove
+   ENDIF
+
+   SRC.FINDID.m_forgive.remove
+   src.tag.kills.logout = <src.kills>
+   src.tag.killdecay.timer= <SRC.FINDID(b_kill_decayer).TIMER>
+
+   if !( <SRC.TAG0.TOTALCONNECTTIME> )
+      SRC.TAG0.TOTALCONNECTTIME	= 0
+   endif
+   SRC.TAG0.TOTALCONNECTTIME	= <eval (<SRC.TAG0.TOTALCONNECTTIME> + <TIME> - <SRC.TAG0.LASTCONNECTTIME>)>
+
+IF !( <SRC.TAG0.LOYALTIME> )
+SRC.TAG0.LOYALTIME = 0
+ENDIF
+SRC.TAG0.LOYALTIME = <eval (<SRC.TAG0.LOYALTIME> + <TIME> - <SRC.TAG0.LASTLOYALTIME>)>
+
+   if ( <F_LOGOUT_HOUSE> )
+      ARGN2=1
+   endif
+
+//   if !( <SRC.REGION.FLAGS> & region_flag_insta_logout )
+//      ARGN2=1
+//   endif
+   
+ON = @ItemDClick
+//if ( (<SRC.ACT.TYPE> == t_shield) || (<SRC.ACT.TYPE> == t_weapon_bow) || (<SRC.ACT.TYPE> == t_weapon_xbow) || (<SRC.ACT.TYPE> == t_weapon_sword) || (<SRC.ACT.TYPE> == t_weapon_mace_sharp) || (<SRC.ACT.TYPE> == t_weapon_mace_staff) || (<SRC.ACT.TYPE> == t_weapon_mace_smith) || (<SRC.ACT.TYPE> == t_weapon_axe) || (<SRC.ACT.TYPE> == t_weapon_fence) )
+//  If (<SRC.act.layer> == 29)
+//    src.sysmessage You can not equip items from your bank.
+//    return 1
+//  endif
+//endif
+   f_vendorhack_detecter
+   
+   if ( <SRC.ACT.TYPE> == t_reagent )
+      SRC.SYSMESSAGE You must use a mortar and pestle to make something out of that.
+      return 1
+   endif
+
+   if ( <SRC.ACTION> == Skill_Magery )
+      SRC.SYSMESSAGE You can't do that while you're casting...
+      return 1
+   endif
+
+   if ( <SRC.ACT.TYPE> == t_spellbook )
+      SRC.ACT.ATTR	= (<SRC.ACT.ATTR> | attr_newbie)
+   endif
+    
+   IF ((<SRC.ACT.MORE1>=C_HORSE_GRAY_DONATOR)||(<SRC.ACT.MORE1>=C_HORSE_BROWN_LT_DONATOR)||(<SRC.ACT.MORE1>=C_HORSE_BROWN_DK_DONATOR)||(<SRC.ACT.MORE1>=C_HORSE_TAN_DONATOR)||(<SRC.ACT.MORE1>=c_beetle_donator)||(<SRC.ACT.MORE1>=C_LLAMA_DONATOR)||(<SRC.ACT.MORE1>=C_OSTARD_FOREST_DONATOR)||(<SRC.ACT.MORE1>=C_OSTARD_DESERT_DONATOR)||(<SRC.ACT.MORE1>=C_OSTARD_ZOSTRICH_DONATOR) || (<SRC.ACT.MORE1>=c_polar_bear_donator)||(<SRC.ACT.MORE1>=c_casual_horse_donator)||(<SRC.ACT.MORE1>=c_armored_steed_donator)||(<SRC.ACT.MORE1>=c_flame_steed_donator)||(<SRC.ACT.MORE1>=c_cusidhe_donator)||(<SRC.ACT.MORE1>=c_lion_wings_donator)||(<SRC.ACT.MORE1>=c_billy_goat_donator)||(<SRC.ACT.MORE1>=c_raptor_light_donator)||(<SRC.ACT.MORE1>=c_ostrich_donator)||(<SRC.ACT.MORE1>=c_grizzly_polar_bear_donator)||(<SRC.ACT.MORE1>=c_raptor_donator))
+   SERV.LOG :DONATOR UNSHRINK: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> is unshrinking a donator mount <src.act.more1> <src.act.name> at <src.p>
+   ENDIF
+   
+   IF ((<SRC.ACT.MORE1>=c_retribution_steed)||(<SRC.ACT.MORE1>=c_retribution_zostrich)||(<SRC.ACT.MORE1>=c_ice_orn)||(<SRC.ACT.MORE1>=c_ice_llama)||(<SRC.ACT.MORE1>=c_ice_zostrich)||(<SRC.ACT.MORE1>=c_ice_horse)||(<SRC.ACT.MORE1>=c_fire_llama)||(<SRC.ACT.MORE1>=c_fire_steed)||(<SRC.ACT.MORE1>=c_fire_orn)||(<SRC.ACT.MORE1>=c_fire_zostrich)||(<SRC.ACT.MORE1>=c_llama_of_the_sun)||(<SRC.ACT.MORE1>=c_oclock_of_the_sun)||(<SRC.ACT.MORE1>=c_zostrich_of_the_sun)||(<SRC.ACT.MORE1>=c_orn_of_the_sun)||(<SRC.ACT.MORE1>=c_vengeance_steed)||(<SRC.ACT.MORE1>=c_vengeance_zostrich)||(<SRC.ACT.MORE1>=c_jungle_steed)||(<SRC.ACT.MORE1>=c_jungle_oclock)||(<SRC.ACT.MORE1>=c_steed_of_the_moon)||(<SRC.ACT.MORE1>=c_oclock_of_the_moon)||(<SRC.ACT.MORE1>=c_llama_of_the_moon)||(<SRC.ACT.MORE1>=c_orn_of_the_moon)||(<SRC.ACT.MORE1>=c_zostrich_of_the_moon)||(<SRC.ACT.MORE1>=c_death_oclock)||(<SRC.ACT.MORE1>=c_death_steed)||(<SRC.ACT.MORE1>=c_acid_orn)||(<SRC.ACT.MORE1>=c_acid_llama)||(<SRC.ACT.MORE1>=c_acid_zostrich)||(<SRC.ACT.MORE1>=c_acid_steed)||(<SRC.ACT.MORE1>=c_ethereal_orn)||(<SRC.ACT.MORE1>=c_ethereal_horse)||(<SRC.ACT.MORE1>=c_ethereal_llama)||(<SRC.ACT.MORE1>=c_ethereal_zostrich)||(<SRC.ACT.MORE1>=c_horse_darkonian)||(<SRC.ACT.MORE1>=c_horse_shadow)||(<SRC.ACT.MORE1>=c_unicorn)||(<SRC.ACT.MORE1>=c_mustang_warped)||(<SRC.ACT.MORE1>=c_nightmare)||(<SRC.ACT.MORE1>=c_vampiric_horse)||(<SRC.ACT.MORE1>=c_vampiric_orn)||(<SRC.ACT.MORE1>=c_vampiric_zostrich)||(<SRC.ACT.MORE1>=c_vampiric_llama)||(<SRC.ACT.MORE1>=c_flamingo_orn)||(<SRC.ACT.MORE1>=c_flamingo_horse)||(<SRC.ACT.MORE1>=c_flamingo_zostrich)||(<SRC.ACT.MORE1>=c_sweetdream)||(<SRC.ACT.MORE1>=c_orn_of_life)||(<SRC.TARG.ID>=c_llama_of_life))||(<SRC.TARG.ID>=c_Evil_Zostrich))||(<SRC.TARG.ID>=c_Haze_Orn))||(<SRC.TARG.ID>=c_haze_oclock))||(<SRC.TARG.ID>=c_haze_steed))||(<SRC.TARG.ID>=c_haze_zostrich))||(<SRC.TARG.ID>=c_Haze_llama))||(<SRC.TARG.ID>=c_rust_orn))||(<SRC.TARG.ID>=c_rust_oclock))||(<SRC.TARG.ID>=c_Rust_steed))||(<SRC.TARG.ID>=c_rust_zostrich))||(<SRC.TARG.ID>=c_rust_llama))||(<SRC.TARG.ID>=c_fragata_orn))||(<SRC.TARG.ID>=c_fragata_steed))||(<SRC.TARG.ID>=c_fragata_llama))||(<SRC.TARG.ID>=c_fragata_zostrich))||(<SRC.ACT.MORE1>=c_flamingo_llama))
+   SERV.LOG :MOUNT UNSHRINK: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> is unshrinking a <src.act.more1> <src.act.name> at <src.p>
+   ENDIF
+   
+   if ( <SRC.ACT.TYPE> == t_container )
+	  
+      if ( <SRC.ACT.TOPOBJ.ISCHAR> )
+         return 0
+      endif	  
+	  
+	  if ( <SRC.ACT.dispid> == i_bones )
+         return 0
+      endif
+
+
+      SRC.ACT	= <SRC.ACT.REGION.UID>
+   
+      if !( <SRC.ACT.TYPE> == t_multi )
+          return 0
+      endif
+	 
+      if ( <SRC.ACT.SRCHOUSE_friend> )
+         return 0
+      endif
+      
+	  
+	  
+	  
+      if ( <SRC.ACT.baseid> == i_floating_dock )
+               return 0
+      endif
+	  
+      SRC.SYSMESSAGE @0f That doesn't belong to you!
+      return 1
+   endif
+   
+ON=@ItemClick
+//   RETURN <SRC.ACT.MESSAGE_EFFECT>
+
+//ON=@ITEMCLIENTTOOLTIP
+//   VAR.TOOLTIP=
+//   OBJ=<ARGO.UID>
+//   OBJ.TRIGGER @Tooltip
+//   IF !<ISEMPTY <VAR.TOOLTIP>>
+//      addcliloc 1042971,<VAR.TOOLTIP>
+//   ENDIF
+//   VAR.TOOLTIP=
+//   MESSAGE_EFFECT_CLITOOLTIP
+
+//ON = @ItemPickup_Ground - Commented out April 03 2006 all items not locked shall be lootable.
+
+   //VAR.BASEID	= <SRC.ACT.BASEID>
+   //SRC.ACT	= <SRC.ACT.REGION.UID>
+
+   //If it's not a multi, let stuff be picked up
+   //if !( <SRC.ACT.TYPE> == t_multi )
+   //    return 0
+   //endif
+   
+   //Allow house of O to be looted.
+   //IF (<SRC.ACT.MORE1>=0)
+   //   return 0   
+   //ENDIF
+
+   //Friends can pick up
+   //if ( <SRC.ACT.SRCHOUSE_friend> )
+   //   return 0
+   //endif
+   
+   //Britain Area 
+   //local.scompare=<STRSUB 0 21 <src.region.name>>
+   //if ((!strcmpi("<local.scompare>","Britain Territory PVP")))
+   //	 return 0
+   //endif
+
+   //Default action on multis, no loot
+   //SRC.SYSMESSAGE That doesn't belong to you!
+   //return 1
+   
+on=@itemPickup_Pack
+IF ( <SRC.ACT.CONT.TYPE> == t_corpse )
+IF !(<SRC.P.M> == 0) && !(<EVAL <src.tag0.lootallowedinevent>> == 1)
+   IF (<SRC.ACT.CONT.LINK> == 04fffffff)
+ 	return 0
+   ENDIF
+   IF (<SRC.ACT.CONT.LINK.UID> == <UID>)
+         return 0
+   ENDIF
+   src.sysmessage You cannot loot other players corpses
+   return 1
+ENDIF
+endif
+
+
+
+ON=@ItemDropon_Ground
+
+IF !((<WEIGHT> + <ACT.WEIGHT>) > <MAXWEIGHT>)
+IF ((<ACTION> == ID(SKILL_FISHING)) || (<ACTION> == SKILL_FISHING))
+IF (<ACT.TYPE> == T_FISH)
+ACT.BOUNCE
+ENDIF
+
+
+  if ( <SRC.ACT.ATTR> & attr_identified )
+    VAR.CURR_ACT	= <SRC.ACT>
+    VAR.CURR_P	= <SRC.ACT.P>
+    SRC.NEWITEM	i_unidentify
+    SRC.ACT.TIMER	= <eval ({ 40 50 } * 5)>
+    SRC.ACT.LINK	= <VAR.CURR_ACT>
+    SRC.ACT.ATTR	= attr_invis | attr_decay
+    SRC.ACT.P	= <VAR.CURR_P>
+  endif
+  
+  if ( <ACT.ATTR> & attr_newbie )
+	if (<WEIGHT> >= <MAXWEIGHT>)
+		ACT.CONT = <SRC.findlayer(layer_pack).uid>
+	endif
+  endif
+  
+
+  
+  
+
+[FUNCTION clear_sawcrime]
+   VAR.CURR_ACT	= <SRC.ACT>
+   SERV.ALLCLIENTS clear_sawcrime_
+   SRC.ACT	= <VAR.CURR_ACT>
+   
+[FUNCTION clear_sawcrime_]
+   if !( <MEMORYFIND.<SRC.UID>> )
+      return 0
+   endif
+
+   SRC.ACT		= <MEMORYFIND.<SRC.UID>>
+   SRC.ACT.COLOR	= <SRC.ACT.COLOR> & ~memory_sawcrime
+
+
+[ITEMDEF i_unidentify]
+ID	= i_memory
+TYPE	= t_script
+ON = @Create
+   ATTR		= attr_invis | attr_decay
+   
+ON = @Timer
+   if ( <LINK.CONT> == 0 )
+     LINK.ATTR	= <LINK.ATTR> & ~attr_identified
+     if ( <LINK.ISARMOUR> || <LINK.ISSHIELD> )
+         LINK.ARMOUR_UPDATE
+     endif
+     LINK.TRIGGER @UnIdentify
+   endif
+   REMOVE
+
+[FUNCTION UPDATE_SERVER_COUNT]
+  ctag.admin_numplayers=0
+  SERV.ALLCLIENTS admin_getplayers
+  
+  if ( 0<UID.uid_settings.TAG.SERVER.MAX_CLIENTS> == 0 )
+     UID.uid_settings.TAG.SERVER.MAX_CLIENTS = 1
+  endif
+
+  if (<EVAL <CTAG0.ADMIN_NUMPLAYERS>> > <UID.uid_settings.TAG.SERVER.MAX_CLIENTS>)
+     serv.allclients sysmessage @30 A new record of simultaneous players has been set. There are <EVAL <CTAG0.ADMIN_NUMPLAYERS>> on the land.
+     UID.uid_settings.TAG.SERVER.MAX_CLIENTS = <EVAL <CTAG0.ADMIN_NUMPLAYERS>>
+  endif
+
+  SYSMESSAGE @0 The world is in motion for about <eval (<SERV.TIMEUP>+1800)/3600)> hours. There are <EVAL <CTAG0.ADMIN_NUMPLAYERS>> players currently on the land, which has seen a maximum of <eval 0<UID.uid_settings.TAG.SERVER.MAX_CLIENTS>> simultaneous players lately.
+
+
+[FUNCTION fix_account_eof]
+   if ( strcmpi( "<SRC.ACCOUNT>", "eof" ) )
+      return 0
+   endif
+
+   SRC.NEWITEM		= i_account_eof_fix
+   SRC.ACT.CONT		= <SRC.UID>
+   SRC.ACT.TIMER	= 2
+   SRC.SYSMESSAGE WARNING: ACCOUNT NAME EOF IS NOT A VALID ACCOUNT. BYE.
+   return 1
+
+
+[ITEMDEF i_account_eof_fix]
+ID		= i_memory
+TYPE		= t_eq_script
+ON = @Timer
+   CONT.DISCONNECT
+   CONT.REMOVE	= 1
+   SERV.ACCOUNT eof DELETE
+   REMOVE
+   return 1
+
+      
+[FUNCTION f_spell_effect]
+   f_magic_reflection <var.argn>
+   if ( <VAR0.f_magic_reflection> )
+      return 1
+   endif
+
+   VAR.RES	= 0
+   if ( 0 )
+   //ELSEIF ( <var.argn> == 11 ) //cure
+   ELSEIF ( <var.argn> == 20 ) // poison
+      f_spell_poison <var.argn2>
+   ELSEIF ( <var.argn> == 27 ) //curse
+      findid.i_rune_mass_curse.remove
+      findid.i_rune_curse.remove      
+   ELSEIF ( <var.argn> == 38 ) // paralyze
+      f_spell_paralyze <var.argn2>
+   ELSEIF ( <var.argn> == 41 ) // dispel
+      f_spell_dispel <var.argn2>
+   ELSEIF ( <var.argn> == 46 ) //mass curse
+      findid.i_rune_mass_curse.remove
+      findid.i_rune_curse.remove
+   ELSEIF ( <var.argn> == 54 ) // mass dispel
+      f_spell_mass_dispel <var.argn2>
+   ELSEIF ( <var.argn> == 59 ) // resurrect
+      if ( <ISDEAD> )
+         MOVE 0 1
+      endif
+   else
+     if ( <NPC> )
+        if ( <VAR.argn> == 28 )	// fire field
+           if ( rand(1200) < <MAGICRESISTANCE> )
+              return 1
+           endif
+        elseif ( <VAR.argn> == 39 )	// poison field
+           if ( rand(1300) < <MAGICRESISTANCE> )
+             return 1
+           endif
+        endif
+     endif
+
+     VAR.SKILL	= <var.argn2>
+     VAR.RES	= <eval (<magicresistance> / 2)>
+     VAR.AGGR	= 1
+     if ( 0 )
+     elseif ( (<var.argn> == 1) || (<var.argn> == 3) || (<var.argn> == 5) || (<var.argn> == 8) )	// 1st
+        VAR.CIRCLE	= 1
+     elseif ( (<var.argn> == 12) )								// 2nd
+        VAR.CIRCLE	= 2
+     elseif ( (<var.argn> == 18) || (<var.argn> == 27) || (<var.argn> == 28) )			// 3rd
+        VAR.CIRCLE	= 3
+     elseif ( (<var.argn> == 30) || (<var.argn> == 37) )					// 4th
+        VAR.CIRCLE	= 4
+     elseif ( (<var.argn> == 39) )								// 5th
+        VAR.CIRCLE	= 5
+     elseif ( (<var.argn> == 42) || (<var.argn> == 43) || (<var.argn> == 46) )			// 6th
+        VAR.CIRCLE	= 6
+     elseif ( (<var.argn> == 47) || (<var.argn> == 49) || (<var.argn> == 51) || (<var.argn> == 55) )	// 7th
+        VAR.CIRCLE	= 7
+     elseif ( <var.argn> == 57) )								// 8th
+        VAR.CIRCLE	= 8
+     else
+        VAR.RES	= 0
+     endif
+   endif
+
+   if ( (<SRC.UID> == <UID>) || (<VAR.argn> == 28) || (<VAR.argn> == 39) || (<VAR.argn> == 47) )
+      VAR.RES	= 0
+   endif
+
+
+   if ( !<NPC> && (<VAR.RES> > 0) )
+      if ( 0<TAG.DEBUG.SKILLS> )
+         SAY Res: <eval <var.res>>, <eval <var.circle>> circle
+      endif
+      if (<ACTION> == Skill_Magery)
+         DAMAGE 1
+         SKILLCHECK_NOW Skill_Magery
+      endif
+      SKILLCHECK_NOW Skill_MagicResist
+   endif
+
+   if ( <NPC> )
+   // targetted by a stat affecting spell
+   elseif ( (<var.argn>==1) || (<var.argn>==3) || (<var.argn>==8) || (<var.argn>==9) || (<var.argn>==10) || (<var.argn>==16) || (<var.argn>==17) || (<var.argn>==27) || (<var.argn>==46) )
+      if ( <findlayer(layer_k_control).uid> != 0 )
+         findlayer(layer_k_control).TAG.AP_UPDATE	= 1
+      endif
+   endif
+   
+
+   if ( <VAR.RES> )
+      If <f_resist_check>
+         RETURN 1
+      ELSE
+         findid(m_SongMimic).remove
+         findid(i_light_source).remove
+         RETURN 0
+      ENDIF
+   endif
+
+   return 0
+
+[ITEMDEF i_item_remover]
+ID	= i_memory
+TYPE	= t_eq_script
+LAYER	= layer_special
+
+ON = @Timer
+  LINK.REMOVE
+  REMOVE
+  return 1
+
+[Itemdef i_uid_settings]
+ID = i_gravestone
+TYPE=t_eq_script
+NAME=uid_settings [DO NOT REMOVE ON PAIN OF DEATH]
+
+On=@Create
+type = t_eq_script
+
+[ITEMDEF i_resurrect_timer]
+ID=i_memory
+
+ON=@CREATE
+    TIMER=3
+
+ON=@TIMER
+    CONT.RESURRECT
+    RETURN 1
+
+[Itemdef i_fsdelay]
+ID	= i_memory
+TYPE	= t_eq_script
+LAYER	= layer_special
+NAME = FS Timer
+
+On=Create
+  Attr=attr_can_decay|attr_move_never
+
+On=@Timer
+  remove
+  return 1
+  
+[Itemdef i_eqdelay]
+ID	= i_memory
+TYPE	= t_eq_script
+LAYER	= layer_special
+NAME = EQ Timer
+
+On=Create
+  Attr=attr_can_decay|attr_move_never
+
+On=@Timer
+  remove
+  return 1
+  
+[Itemdef i_paralyzedelay]
+ID = i_memory
+TYPE = t_eq_script
+LAYER = layer_special
+NAME = Paralyze Timer
+
+On=Create
+Attr=attr_can_decay|attr_move_never
+
+On=@Timer
+remove
+return 1
+
+[ITEMDEF i_speedor]
+ID	= i_memory
+TYPE	= t_eq_script
+LAYER	= layer_special
+NAME=SCheck
+
+On=@Create
+    ATTR=0080
+
+On=@Equip
+obj=<uid>
+
+If ( <src.flags> & 080000000 )//second checks for steed riding
+    If <eval <var.speedhacker>>>12//11
+	If <eval <var.speedhacker>><50//50
+	    SERV.WRITEFILE E:\Imperial_uo\Sphere\polls\teot.txt <SERV.RTIME> account: - <SRC.ACCOUNT> char: - <SRC.NAME> - uid: <SRC.UID> - at coords: <SRC.P> may be using speedhack - test phase2 steed -
+	    //SERV.LOG account: - <SRC.ACCOUNT> char: - <SRC.NAME> - uid: <SRC.UID> - at coords: <SRC.P> may be using speedhack - test phase2 sted -	    
+	    remove
+	    var.speedhacker=
+ 	    return 1
+		Else
+		    remove
+		    var.speedhacker=
+		    return 1
+	Endif
+      Else
+         var.speedhacker=
+         remove
+         return 1
+    Endif
+   Else
+	If <eval <var.speedhacker>>>7 //on foot?
+	    If <eval <var.speedhacker>><50
+		SERV.WRITEFILE E:\Imperial_uo\Sphere\polls\teot.txt <SERV.RTIME> account: - <SRC.ACCOUNT> char: - <SRC.NAME> - uid: <SRC.UID> - at coords: <SRC.P> may be using speedhack - test phase on foot-
+		//SERV.LOG account: - <SRC.ACCOUNT> char: - <SRC.NAME> - uid: <SRC.UID> - at coords: <SRC.P> may be using speedhack - test phase on foot -
+		remove
+		var.speedhacker=
+		return 1
+	      Else
+	      remove
+	      var.speedhacker=
+     	      return 1
+	    Endif
+	  Else
+	  remove
+	  var.speedhacker=
+	  return 1
+	Endif
+Endif
+
+On=@Timer
+    Try uid.<link>.speedh <uid>
+    Link.equip <uid> 
+    Timer 1
+    return 1
+
+[FUNCTION speedh]
+var.speedhacker=<DISTANCE <uid.<args>>>
+
+[comment udheiduhed]
+
+&& (<SRC.ISMILITANT>) && (<OBJ.ISMILITANT>) && (<SRC.ISMILITANTBRITAIN>) && !(<OBJ.ISMILITANTBRITAIN>))
+ SRC.TAG.REP.ALIGNMENT=<EVAL (<SRC.TAG.REP.ALIGNMENT> + <LOCAL.REP_CHANGE>)>
+ SRC.SYSMESSAGE You gain some reputation. 123
+ SERV.LOG :FACTION POINTS: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> now have <EVAL <SRC.TAG.REP.ALIGNMENT>> <SRC.TAG.ALIGNMENT> points.
+ OBJ.TAG.REP.ALIGNMENT=<eval (<OBJ.TAG0.REP.ALIGNMENT> - 25)>
+ OBJ.SYSMESSAGE You lose some reputation. 456
+
+  ELSEIF ((<SRC.ISORDER> && <OBJ.ISCHAOS>) || (<SRC.ISCHAOS> && <OBJ.ISORDER>) && (<SRC.ISMILITANT>) && (<OBJ.ISMILITANT> && (<SRC.ISMILITANTYEW>) && !(<OBJ.ISMILITANTYEW>)) // yew militia
+  SRC.TAG.REP.ALIGNMENT=<EVAL (<SRC.TAG.REP.ALIGNMENT> + <LOCAL.REP_CHANGE>)>
+  SRC.SYSMESSAGE You gain some reputation. 789
+  SERV.LOG :FACTION POINTS: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> now have <EVAL <SRC.TAG.REP.ALIGNMENT>> <SRC.TAG.ALIGNMENT> points.
+  OBJ.TAG.REP.ALIGNMENT=<eval (<OBJ.TAG0.REP.ALIGNMENT> - 25)>
+  OBJ.SYSMESSAGE You lose some reputation. 101112
+
+   ELSEIF ((<SRC.ISORDER> && <OBJ.ISCHAOS>) || (<SRC.ISCHAOS> && <OBJ.ISORDER>) && (<SRC.ISMILITANT>) && (<OBJ.ISMILITANT> && (<SRC.ISMILITANTMINOC>) && !(<OBJ.ISMILITANTMINOC>)) // minoc militia
+   SRC.TAG.REP.ALIGNMENT=<EVAL (<SRC.TAG.REP.ALIGNMENT> + <LOCAL.REP_CHANGE>)>
+   SRC.SYSMESSAGE You gain some reputation. 1314
+   SERV.LOG :FACTION POINTS: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> now have <EVAL <SRC.TAG.REP.ALIGNMENT>> <SRC.TAG.ALIGNMENT> points.
+   OBJ.TAG.REP.ALIGNMENT=<eval (<OBJ.TAG0.REP.ALIGNMENT> - 25)>
+   OBJ.SYSMESSAGE You lose some reputation. 1516
+
+    ELSEIF ((<SRC.ISORDER> && <OBJ.ISCHAOS>) || (<SRC.ISCHAOS> && <OBJ.ISORDER>) && (<SRC.ISMILITANT>) && (<OBJ.ISMILITANT>) && (<SRC.ISMILITANTTRINSIC>) && !(<OBJ.ISMILITANTTRINSIC>)) // trinsic militia
+    SRC.TAG.REP.ALIGNMENT=<EVAL (<SRC.TAG.REP.ALIGNMENT> + <LOCAL.REP_CHANGE>)>
+    SRC.SYSMESSAGE You gain some reputation. 2021
+    SERV.LOG :FACTION POINTS: <SRC.UID> <SRC.ACCOUNT> <SRC.NAME> now have <EVAL <SRC.TAG.REP.ALIGNMENT>> <SRC.TAG.ALIGNMENT> points.
+    OBJ.TAG.REP.ALIGNMENT=<eval (<OBJ.TAG0.REP.ALIGNMENT> - 25)>
+    OBJ.SYSMESSAGE You lose some reputation. 2224
+    RETURN 1
+    ENDIF
+
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+
+
+[FUNCTION f_travelstone125a]
+ 
+IF (<SRC.FINDID.m_travelstone_delay.UID>)
+    SRC.FINDID.m_travelstone_delay.REMOVE
+ENDIF
+ 
+SRC.SAY Kal Ort Por
+SRC.ANIM=17
+ 
+SRC.EVENTS= +e_travelstone_break
+SERV.NEWITEM=m_travelstone_delay
+NEW.MOREP=<ARGS>
+NEW.TIMER=8
+NEW.EQUIP
+SRC.SOUND=85
+ 
+ 
+[EVENTS e_travelstone_break]
+ON=@SpellCast
+CONSUME m_travelstone_delay
+EVENTS -e_travelstone_break
+MESSAGE Travel Cancelled.
+RETURN 1
+ 
+ON=@SpellEffect
+f_spell_check_travelstone <ARGN>
+IF (<VAR.f_spell_check_travelstone>)
+    CONSUME m_travelstone_delay
+    EVENTS -e_travelstone_break
+    MESSAGE Travel Cancelled.
+    RETURN 0
+ENDIF
+ 
+ON=@GetHit
+CONSUME m_travelstone_delay
+EVENTS -e_travelstone_break
+MESSAGE Travel Cancelled.
+RETURN 0
+   
+[FUNCTION f_spell_check_travelstone]
+VAR.f_spell_check_travelstone=1
+IF ( 0 )
+   ELSEIF ( <ARGN> == 1 )   // CLUMSY
+   ELSEIF ( <ARGN> == 3 )   // FEEBLEMIND
+   ELSEIF ( <ARGN> == 5 )   // MAGIC ARROW
+   ELSEIF ( <ARGN> == 8 )   // WEAKEN
+   ELSEIF ( <ARGN> == 12 )  // HARM
+   ELSEIF ( <ARGN> == 18 )  // FIREBALL
+   ELSEIF ( <ARGN> == 20 )  // POISON
+   ELSEIF ( <ARGN> == 27 )  // CURSE
+   ELSEIF ( <ARGN> == 28 )  // FIRE FIELD
+   ELSEIF ( <ARGN> == 30 )  // LIGHTNING
+   ELSEIF ( <ARGN> == 31 )  // MANA DRAIN
+   ELSEIF ( <ARGN> == 37 )  // MIND BLAST
+   ELSEIF ( <ARGN> == 38 )  // PARALYZE
+   ELSEIF ( <ARGN> == 39 )  // POISON FIELD
+   ELSEIF ( <ARGN> == 41 )  // DISPEL
+   ELSEIF ( <ARGN> == 42 )  // ENERGY BOLT
+   ELSEIF ( <ARGN> == 43 )  // EXPLOSION
+   ELSEIF ( <ARGN> == 46 )  // MASS CURSE
+   ELSEIF ( <ARGN> == 47 )  // PARALYZE FIELD
+   ELSEIF ( <ARGN> == 49 )  // CHAIN LIGHTNING
+   ELSEIF ( <ARGN> == 51 )  // FLAMESTRIKE
+   ELSEIF ( <ARGN> == 53 )  // MANA VAMPIRE
+   ELSEIF ( <ARGN> == 54 )  // MASS DISPEL
+   ELSEIF ( <ARGN> == 55 )  // METEOR SWARM
+   ELSEIF ( <ARGN> == 57 )  // EARTHQUAKE
+   ELSE
+      VAR.f_spell_check_travelstone=0
+ENDIF
+ 
+[ITEMDEF m_travelstone_delay]
+NAME=Travel Stone Delay
+ID=i_handr_1
+TYPE=T_EQ_SCRIPT
+WEIGHT=0
+LAYER=layer_special
+ 
+ON=@TIMER
+SERV.LOG :TRAVEL STONE: <CONT.UID> <CONT.ACCOUNT> <CONT.NAME> is going from <CONT.P> to <MOREP> through the Travel Stone.
+CONT.SOUND=snd_spell_recall
+CONT.GO <MOREP>
+CONT.EVENTS -e_travelstone_break   
+REMOVE
+RETURN 1	
+
+
+[FUNCTION f_sendpacket_orion]
+//Removed Changing Trees to Stumps, Marking Cave Tiles, No Vegetation, No Draw Roofs, No Change Fields to Tiles, Boxhack, Available Dark Nights, Clearing the Way, Auto Open Doors
+SENDPACKET B0BF W000B W0FACE W0032 D0FFFF38B1
+// Removed Light Filter, No Death Screen, AutoStart, Corpses Autoopen, Stealth Steps Counter, Tracker, Ignore Stamina Check, Reconnector, Autoloot and Fast Rotation
+SENDPACKET B0BF W017 W0FACE W08001 D0FFFFFFFF D0FAFF96B4 D0FFFFFFFF D0FFFFFFFF
+// Crash Injection Clients and others
+SENDPACKET B0B0 W0020 D00000001 D00000409 D00000046 D00000046 D00037B7D D000001FF D0FF000000 B00
+//Packet that will demand the client version. In case of wrong version it flushes the client.
+//To make it work add to the sphere.ini PACKET191=f_orion_exclusive_sphere_ini (it's what it will block the client)
+SENDPACKET B0BF W0007 W0FACE W0034
+
+
+[FUNCTION f_orionexclusive]
+if (<tag0.iwillkickyou>==1)
+  serv.log WARNING Player is using a client different than Orion UO
+  Sysmessage This shard require ORION client
+  DISCONNECT_NOW
+ENDIF
+
+[FUNCTION f_orion_exclusive_sphere_ini]
+// au login on recois déjà ça: 
+// (sendpacket_orion.scp,25)HERE 0 13 0 5 0 0 3 32 0 0
+// (sendpacket_orion.scp,25)HERE 0 9 0 11 70 82 67 0 0 0
+// (sendpacket_orion.scp,25)HERE 0 10 0 15 10 0 0 0 63 0
+// Quand on lance la fonction TEST
+// on recois ça: 0 11 250 206 0 52 1 0 0 0 (B0BF W000B W0FACE W0034 D0V1V2V3V4) Where V1 V2 V3 V4 - version bytes // At now - yes, always 1.0.0.0
+IF <local.2> ==11 //Packet de confirmation du login
+serv.log <local.1> <local.2> <local.3> <local.4> <local.5> <local.6> <local.7> <local.8> <local.9> <local.10>
+serv.log <LOCAL.ACCOUNT> //(string) current active account if any is logged by the client
+serv.log <LOCAL.CHAR> //(uid) 
+ENDIF
+IF <local.2> ==11 //Packet de version orion
+    IF ((<local.7> == 1) && (<local.8> == 0) && (<local.9> == 0) && (<local.10> == 0)) //Check if the answer orion version is 1.0.0.0
+		serv.log Using Orion
+        serv.log Removed iwillkickyou TAG
+		uid.<LOCAL.CHAR>.tag.iwillkickyou=
+	ELSE 
+	    serv.log Not Using Orion
+		//serv.log Adding iwillkickyou TAG
+	    //uid.<LOCAL.CHAR>.tag.iwillkickyou=1
+	ENDIF
+ELSE 
+	    serv.log Not Using Orion
+		//serv.log Adding iwillkickyou TAG
+	    //uid.<LOCAL.CHAR>.tag.iwillkickyou=1
+ENDIF
+
+
+
+[EOF]

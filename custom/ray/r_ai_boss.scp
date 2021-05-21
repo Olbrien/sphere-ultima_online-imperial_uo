@@ -1,0 +1,1415 @@
+[FUNCTION random_location]
+	DORAND 8
+		move 1 0
+		move 0 1
+		move 1 1
+		move -1 0
+		move 0 -0
+		move 1 -1
+		move -1 1
+		move -1 -1
+	ENDDO
+
+[FUNCTION f_get_random_floor_crack]
+	dorand 7
+		return i_floor_cracks
+		return 01b02
+		return 01b03
+		return 01b04
+		return 01b05
+		return 01b06
+		return 01b08
+	enddo
+	return i_floor_cracks
+
+[FUNCTION drop_blood]
+	if <argn> > 0bb7
+		local.color=0	//091f	//091a	//0919//	0a29
+	else
+		local.color=<argn>
+	endif
+	serv.newitem={i_blood_pool_large 1 0122b 1 0122c 1 0122d 1 0122e 1}
+	new.timer={5 10}
+	new.attr=attr_move_never|attr_decay
+	new.color=<local.color>
+	new.p=<p>
+
+//anim 10
+
+[CHARDEF c_light_bird]
+DEFNAME=c_light_bird
+ID=c_bird
+NAME=no
+ICON=i_pet_BIRD
+CAN=MT_WALK|MT_FLY
+DAM=1
+ARMOR=1
+
+ON=@Create
+NPC=brain_animal
+COLOR=1
+
+STR=5
+DEX=5
+INT=5
+
+ON=@Click
+RETURN 1
+
+
+[FUNCTION f_effect_lightning]
+SERV.NEWNPC c_light_bird
+NEW.P=<P>
+NEW.EFFECT 1,1
+NEW.UPDATE
+NEW.REMOVE
+
+
+[FUNCTION f_lightning_spawner]
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 2
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 2
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 3
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 3
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 5
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 5
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 7
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 7
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 8
+SERV.NEWITEM i_lightning_tile
+NEW.MOVENEAR <UID> 8
+
+
+[ITEMDEF i_lightning_tile]
+ID=i_floor_marble_3
+TYPE=t_script
+
+ON=@Step
+SRC.DAMAGE 40
+
+ON=@Create
+COLOR=07ad
+ATTR=attr_invis|attr_decay|attr_can_decay
+TIMER=1
+
+ON=@Timer
+IF (<EVAL <TAG0.MOVED>> == 20) // times it will move
+REMOVE
+SERV.NEWITEM i_floor_crack_explode // crack spawner here
+NEW.P <P>
+
+SERV.NEWITEM 01b02						// more cracks with different color
+NEW.COLOR 07ad
+NEW.TIMER={ 5 8 }
+NEW.ATTR=attr_move_never|attr_decay
+NEW.P <P>
+NEW.RANDOM_LOCATION
+
+SERV.NEWITEM 01b05
+NEW.COLOR 07ad
+NEW.TIMER={ 5 8 }
+NEW.ATTR=attr_move_never|attr_decay
+NEW.P <P>
+NEW.RANDOM_LOCATION
+ENDIF
+
+
+IF (<EVAL <TAG0.MOVED>> < 20)
+SERV.NEWNPC c_light_bird
+NEW.P=<P>
+NEW.UPDATE
+NEW.EFFECT 1,1
+NEW.TIMERF 1, remove
+
+DORAND 4
+MOVE N
+MOVE E
+MOVE S
+MOVE W
+ENDDO
+
+TAG.MOVED=(<eval <TAG0.MOVED> + 1>)
+TIMER=1
+ENDIF
+RETURN 1
+
+
+[ITEMDEF i_floor_crack_explode]
+ID=i_floor_cracks
+TYPE=t_script
+
+ON=@Create
+COLOR=0bb0
+TIMER=5
+ATTR=attr_move_never
+
+
+ON=@Timer
+   SERV.NEWITEM i_fx_explode_rock
+   NEW.P <P>
+   REMOVE
+   
+
+[ITEMDEF i_fx_explode_rock]
+ID=i_fx_explosion_2
+TYPE=t_fire
+
+ON=@Create
+TIMER=3
+ATTR=attr_move_never
+
+ON=@Timer
+   SERV.NEWITEM i_boss_rock
+   NEW.P <P>
+   REMOVE
+
+ON=@Step
+SRC.DAMAGE 40
+
+
+[ITEMDEF i_boss_rock]
+ID=01772
+
+ON=@Create
+COLOR=020
+TIMER=5
+MORE1=1 // stage 1
+ATTR=attr_move_never
+
+ON=@Timer
+IF (<MORE1> == 1)
+	COLOR=0480
+	 MORE1=2
+	  TIMER=5
+	ENDIF
+
+IF (<MORE1> == 2)
+	COLOR=022
+	 MORE1=3
+	  TIMER=5
+	 ENDIF
+
+/////////////////////
+///Twin Princes/////
+///////////////////
+
+[FUNCTION exploded_x]
+	serv.newitem={ i_fx_explode 1 i_fx_explosion_2 1 i_fx_explosion_2 1 }
+	new.color <argn>
+	new.timer={ 1 2 }
+	new.attr=attr_move_never|attr_decay
+	new.p=<p>
+	
+	serv.newitem={ i_fx_explode 1 i_fx_explosion_2 1 i_fx_explosion_2 1 }
+	new.color <argn>
+	new.timer={ 1 2 }
+	new.attr=attr_move_never|attr_decay
+	new.p=<p>
+	new.nudgeup 5
+	
+	serv.newitem={ i_fx_explode 1 i_fx_explosion_2 1 i_fx_explosion_2 1 }
+	new.color <argn>
+	new.timer={ 1 2 }
+	new.attr=attr_move_never|attr_decay
+	new.p=<p>
+	new.move 1 0
+	
+	serv.newitem={ i_fx_explode 1 i_fx_explosion_2 1 i_fx_explosion_2 1 }
+	new.color <argn>
+	new.timer={ 1 2 }
+	new.attr=attr_move_never|attr_decay
+	new.p=<p>
+	new.move 0 1
+	
+	serv.newitem={ i_fx_explode 1 i_fx_explosion_2 1 i_fx_explosion_2 1 }
+	new.color <argn>
+	new.timer={ 1 2 }
+	new.attr=attr_move_never|attr_decay
+	new.p=<p>
+	new.nudgeup 10
+	new.move 1 1
+	
+	serv.newitem=i_fire
+	new.color <argn>
+	new.timer={ 10 20 }
+	new.attr=attr_move_never|attr_decay
+	new.p=<p>
+	new.move <eval rand(3)+-rand(3)> <eval rand(3)+-rand(3)>
+	
+	serv.newitem=i_fire
+	new.color <argn>
+	new.timer={ 10 20 }
+	new.attr=attr_move_never|attr_decay
+	new.p=<p>
+	new.move <eval rand(3)+-rand(3)> <eval rand(3)+-rand(3)>
+	
+	serv.newitem=i_fire
+	new.color <argn>
+	new.timer={ 10 20 }
+	new.attr=attr_move_never|attr_decay
+	new.p=<p>
+	new.move <eval rand(3)+-rand(3)> <eval rand(3)+-rand(3)>
+	
+	serv.newitem=i_fire
+	new.color <argn>
+	new.timer={ 10 20 }
+	new.attr=attr_move_never|attr_decay
+	new.p=<p>
+	new.move <eval rand(3)+-rand(3)> <eval rand(3)+-rand(3)>
+
+// move E
+
+//293,85,-28,2
+//293,86,-28,2
+//293,87,-28,2
+//292,88,-28,2
+//292,89,-28,2
+//292,90,-28,2
+//292,91,-28,2
+//292,92,-28,2
+//292,93,-28,2
+//293,94,-28,2
+//293,95,-28,2
+//293,96,-28,2
+
+// move W
+
+//326,96,-28,2
+//326,95,-28,2
+//326,94,-28,2
+//327,93,-28,2
+//327,92,-28,2
+//327,91,-28,2
+//327,90,-28,2
+//327,89,-28,2
+//327,88,-28,2
+//326,87,-28,2
+//326,86,-28,2
+//326,85,-28,2
+
+
+// move 4 flames
+
+
+// circle
+
+//313,91,-28,2	// -e
+//312,89,-28,2	// -ne
+//310,88,-28,2	// -n
+//308,89,-28,2	// -nw
+//307,91,-28,2	// -w
+//308,93,-28,2	// -sw
+//310,94,-28,2	// -s
+//312,93,-28,2	// -se
+
+///Testing
+
+[ITEMDEF i_boss_flame]
+ID=i_fire_column
+TYPE=t_fire
+
+ON=@Step
+SRC.DAMAGE 40
+
+ON=@Create
+ATTR=attr_static|attr_decay
+COLOR=0486
+
+ON=@Timer
+IF (<eval <TAG0.MOVED>> == 20) // times the flames will move
+REMOVE
+ENDIF
+IF (<eval <TAG0.MOVED>> < 20)
+MOVE N
+TAG.MOVED=(<eval <TAG0.MOVED> + 1>)
+TIMER=1
+ENDIF
+RETURN 1
+
+
+[ITEMDEF i_boss_flame2]
+ID=i_fire_column
+TYPE=t_fire
+
+ON=@Step
+SRC.DAMAGE 40
+
+ON=@Create
+ATTR=attr_static|attr_decay
+COLOR=0486
+
+ON=@Timer
+IF (<eval <TAG0.MOVED>> == 20) // times the flames will move
+REMOVE
+ENDIF
+IF (<eval <TAG0.MOVED>> < 20)
+MOVE W
+TAG.MOVED=(<eval <TAG0.MOVED> + 1>)
+TIMER=1
+ENDIF
+RETURN 1
+
+
+[ITEMDEF i_boss_flame3]
+ID=i_fire_column
+TYPE=t_fire
+
+ON=@Step
+SRC.DAMAGE 40
+
+ON=@Create
+ATTR=attr_static|attr_decay
+COLOR=0486
+
+ON=@Timer
+IF (<eval <TAG0.MOVED>> == 20) // times the flames will move
+REMOVE
+ENDIF
+IF (<eval <TAG0.MOVED>> < 20)
+MOVE S
+TAG.MOVED=(<eval <TAG0.MOVED> + 1>)
+TIMER=1
+ENDIF
+RETURN 1
+
+
+[ITEMDEF i_boss_flame4]
+ID=i_fire_column
+TYPE=t_fire
+
+ON=@Step
+SRC.DAMAGE 40
+
+ON=@Create
+ATTR=attr_static|attr_decay
+COLOR=0486
+
+ON=@Timer
+IF (<eval <TAG0.MOVED>> == 20) // times the flames will move
+REMOVE
+ENDIF
+IF (<eval <TAG0.MOVED>> < 20)
+MOVE E
+TAG.MOVED=(<eval <TAG0.MOVED> + 1>)
+TIMER=1
+ENDIF
+RETURN 1
+
+
+[ITEMDEF i_boss_flame5]
+ID=i_fire_column
+TYPE=t_fire
+
+ON=@Step
+SRC.DAMAGE 40
+
+ON=@Create
+ATTR=attr_static|attr_decay
+COLOR=0486
+
+ON=@Timer
+IF (<eval <TAG0.MOVED>> == 13) // times the flames will move
+REMOVE
+ENDIF
+IF (<eval <TAG0.MOVED>> < 13)
+MOVE SE
+TAG.MOVED=(<eval <TAG0.MOVED> + 1>)
+TIMER=1
+ENDIF
+RETURN 1
+
+
+[ITEMDEF i_boss_flame6]
+ID=i_fire_column
+TYPE=t_fire
+
+ON=@Step
+SRC.DAMAGE 40
+
+ON=@Create
+ATTR=attr_static|attr_decay
+COLOR=0486
+
+ON=@Timer
+IF (<eval <TAG0.MOVED>> == 13) // times the flames will move
+REMOVE
+ENDIF
+IF (<eval <TAG0.MOVED>> < 13)
+MOVE SW
+TAG.MOVED=(<eval <TAG0.MOVED> + 1>)
+TIMER=1
+ENDIF
+RETURN 1
+
+
+[ITEMDEF i_boss_flame7]
+ID=i_fire_column
+TYPE=t_fire
+
+ON=@Step
+SRC.DAMAGE 40
+
+ON=@Create
+ATTR=attr_static|attr_decay
+COLOR=0486
+
+ON=@Timer
+IF (<eval <TAG0.MOVED>> == 13) // times the flames will move
+REMOVE
+ENDIF
+IF (<eval <TAG0.MOVED>> < 13)
+MOVE NE
+TAG.MOVED=(<eval <TAG0.MOVED> + 1>)
+TIMER=1
+ENDIF
+RETURN 1
+
+
+[ITEMDEF i_boss_flame8]
+ID=i_fire_column
+TYPE=t_fire
+
+ON=@Step
+SRC.DAMAGE 40
+
+ON=@Create
+ATTR=attr_static|attr_decay
+COLOR=0486
+
+ON=@Timer
+IF (<eval <TAG0.MOVED>> == 13) // times the flames will move
+REMOVE
+ENDIF
+IF (<eval <TAG0.MOVED>> < 13)
+MOVE NW
+TAG.MOVED=(<eval <TAG0.MOVED> + 1>)
+TIMER=1
+ENDIF
+RETURN 1
+
+////////////
+///Events///
+////////////
+
+[EVENTS e_npc_heal]
+ON = @GetHit
+IF (<RESTEST 1 i_potion_healgreat>)
+IF ((<HITS> > ((<STR>*3)/4)) || rand(8))
+CONSUME 1 i_potion_healgreat
+HITS = <HITS> + <EVAL {150 200}>
+ANIM 19
+RETURN 1
+ENDIF
+ENDIF
+
+[EVENTS e_weapon_switcher]
+
+ON=@NPCActFight
+IF ( <DISTANCE> > 2 )
+IF ( (<FINDTYPE(t_weapon_bow)>) || (<FINDTYPE(t_weapon_xbow)>) )
+IF !( (<FINDLAYER(2).TYPE> == t_weapon_bow) || (<FINDLAYER(2).TYPE> == t_weapon_xbow) )
+FINDTYPE.t_weapon_xbow.CONT=<UID>
+ENDIF
+ENDIF
+ELIF ( <DISTANCE> < 2 )
+IF ( (<FINDLAYER(2).TYPE>==t_weapon_bow) || (<FINDLAYER(2).TYPE>==t_weapon_xbow) )
+FINDTYPE.t_weapon_sword.CONT=<UID>
+ENDIF
+ENDIF
+RETURN 0
+
+
+[EVENTS e_twinprince_halberd]
+
+ON=@SpellEffect
+IF (<SRC.BASEID> == c_twin_prince_mage)
+RETURN 1
+
+[EVENTS e_twinprince_mage]
+
+ON=@SpellCast
+LOCAL.FASTCAST = (<ARGN3> / 2)
+ARGN3 = <LOCAL.FASTCAST>
+
+ON=@SpellSuccess
+LOCAL.SPELLSTRENGTH = (<ARGN2> * 4)
+ARGN2 = <LOCAL.SPELLSTRENGTH>
+
+ON=@NPCActFight
+if (<magery> > 0)
+local.spell=<r1,64>
+while (<local.spell> < 64)
+if (<CanCast <local.spell>>)
+local.skill=magery
+return 2
+else
+local.spell ++
+endif
+endwhile
+endif  
+
+ON=@GetHit
+IF (RAND(2) == 1)
+flamestike_all
+ENDIF
+
+IF (RAND(2) == 1)
+cast_earthquake
+ENDIF
+
+/////////////////
+
+[FUNCTION create_4flames]
+
+SERV.NEWITEM i_boss_flame5
+NEW.P 301,75,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 299,76,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 299,77,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 298,77,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 298,78,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 297,78,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 297,79,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+SERV.NEWITEM i_boss_flame5
+NEW.P 296,79,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 296,80,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 295,80,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 295,82,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame5
+NEW.P 294,82,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+
+SERV.NEWITEM i_boss_flame6
+NEW.P 317,75,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 318,76,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 319,76,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 319,76,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 320,77,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 320,78,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 321,78,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+SERV.NEWITEM i_boss_flame6
+NEW.P 321,79,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 322,79,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 322,80,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 323,80,-28,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 323,81,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 324,81,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame6
+NEW.P 324,83,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+
+[FUNCTION create_flames_NW]
+
+SERV.NEWITEM i_boss_flame
+NEW.P 309,91,-13,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 307,91,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 305,91,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 303,91,-23,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 300,91,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 297,91,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 294,91,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+SERV.NEWITEM i_boss_flame
+NEW.P 311,91,-13,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 313,91,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 315,91,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 317,91,-23,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 319,91,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 321,91,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame
+NEW.P 323,91,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,90,-13,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,88,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,86,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,84,-23,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,82,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,80,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,78,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,92,-13,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,94,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,96,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,98,-23,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,100,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,102,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame2
+NEW.P 310,104,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+[FUNCTION create_flames_SE]
+
+SERV.NEWITEM i_boss_flame3
+NEW.P 309,91,-13,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 307,91,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 305,91,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 303,91,-23,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 300,91,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 297,91,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 294,91,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+SERV.NEWITEM i_boss_flame3
+NEW.P 311,91,-13,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 313,91,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 315,91,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 317,91,-23,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 319,91,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 321,91,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame3
+NEW.P 323,91,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,90,-13,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,88,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,86,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,84,-23,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,82,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,80,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,78,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,92,-13,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,94,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,96,-18,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,98,-23,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,100,-29,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,102,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+SERV.NEWITEM i_boss_flame4
+NEW.P 310,104,-27,2
+NEW.TAG.MOVED=1
+NEW.TIMER=1
+
+
+//////////////////////////////////////////
+///Clone Boss - Grim Baron - Ice Theme///
+////////////////////////////////////////
+
+[EVENTS e_baron_boss]
+
+ON=@Death
+FORCHARS 90
+IF ((<BASEID>=c_baron_clone_sword) || (<BASEID>=c_baron_clone_mage) || (<BASEID>=c_baron_clone_halberd))
+REMOVE
+ENDIF
+ENDFOR
+
+ON=@HitTry
+IF (!(<SRC.FLAGS> & statf_conjured) || (<SRC.BASEID> == c_undead_dragon))
+RETURN 0
+ENDIF
+
+SAY An Ort
+dispel_all
+RETURN 1
+
+ON=@SpellEffect
+IF ((<ARGN1> == 20) || (<ARGN1> == 39))
+EMOTE resist your spell
+RETURN 1
+ENDIF
+
+ON=@Click
+RETURN 1
+
+////////////////////////////
+///Event for the Soldiers
+///I could make both on the same but I thought it's best to separate.
+//////////////////////////
+
+[EVENTS e_baron_clone]
+
+ON=@Death
+IF (RAND(100) > 50)
+LOCAL.ACT=<ACT.UID>
+NEWITEM=i_baron_trap
+ACT.P=<P>
+ACT.COLOR=0480
+ACT.ATTR=attr_static|attr_decay
+ACT.LINK=<UID>
+ACT.TIMER=20
+ACT=<LOCAL.ACT>
+LOCAL.ACT=
+ENDIF
+
+ON=@HitTry
+IF (!(<SRC.FLAGS> & statf_conjured) || (<SRC.BASEID> == c_undead_dragon))
+RETURN 0
+ENDIF
+
+SAY @060 Kek m8
+turn_to_soldier
+RETURN 1
+
+ON=@DeathCorpse
+ARGO.REMOVE
+
+ON=@SpellEffect
+IF ((<ARGN1> == 20) || (<ARGN1> == 39))
+EMOTE resist your spell
+RETURN 1
+ENDIF
+
+ON=@Click
+RETURN 1
+
+///////////////
+// FUNCTION //
+/////////////
+// Instead of just using dispel, I thought it would be funny it turning summons into more soldiers.
+
+[FUNCTION turn_to_soldier]
+
+// <memoryfindtype(memory_ipet).LINK>		//Summoner
+
+SRC.spirits_send
+NEWNPC c_baron_clone_sword
+NEW.P = <SRC.P>
+NEWNPC c_baron_clone_halberd
+NEW.P = <SRC.P>
+NEW.SAY @060 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+SRC.REMOVE
+SRC.spirits_send
+
+[FUNCTION spirits_send]
+sector.allclients sendpacket 0c0 00 D0 D0 W036d4 W<src.p.x> W<src.p.y> B<eval(<src.p.z>+9)> W<eval(<src.p.x>+8)> W<eval(<src.p.y>)> B<eval(<src.p.z>+10+{1 15})> B0 B13 00 00 00 B0 D1152 D2
+sector.allclients sendpacket 0c0 00 D0 D0 W036d4 W<src.p.x> W<src.p.y> B<eval(<src.p.z>+9)> W<eval(<src.p.x>)> W<eval(<src.p.y>+8)> B<eval(<src.p.z>+10+{1 15})> B0 B13 00 00 00 B0 D1152 D2
+sector.allclients sendpacket 0c0 00 D0 D0 W036d4 W<src.p.x> W<src.p.y> B<eval(<src.p.z>+9)> W<eval(<src.p.x>-4)> W<eval(<src.p.y>)> B<eval(<src.p.z>+10+{1 15})> B0 B13 00 00 00 B0 D1152 D2
+sector.allclients sendpacket 0c0 00 D0 D0 W036d4 W<src.p.x> W<src.p.y> B<eval(<src.p.z>+9)> W<eval(<src.p.x>)> W<eval(<src.p.y>-6)> B<eval(<src.p.z>+10+{1 15})> B0 B13 00 00 00 B0 D1152 D2
+sector.allclients sendpacket 0c0 00 D0 D0 W036d4 W<src.p.x> W<src.p.y> B<eval(<src.p.z>+12)> W<eval(<src.p.x>+12)> W<eval(<src.p.y>+5)> B<eval(<src.p.z>+10+{1 15})> B0 B13 00 00 00 B0 D1152 D2
+sector.allclients sendpacket 0c0 00 D0 D0 W036d4 W<src.p.x> W<src.p.y> B<eval(<src.p.z>+12)> W<eval(<src.p.x>)> W<eval(<src.p.y>+10)> B<eval(<src.p.z>+10+{1 15})> B0 B13 00 00 00 B0 D1152 D2
+sector.allclients sendpacket 0c0 00 D0 D0 W036d4 W<src.p.x> W<src.p.y> B<eval(<src.p.z>+12)> W<eval(<src.p.x>-8)> W<eval(<src.p.y>-5)> B<eval(<src.p.z>+10+{1 15})> B0 B13 00 00 00 B0 D1152 D2
+sector.allclients sendpacket 0c0 00 D0 D0 W036d4 W<src.p.x> W<src.p.y> B<eval(<src.p.z>+12)> W<eval(<src.p.x>)> W<eval(<src.p.y>-8)> B<eval(<src.p.z>+10+{1 15})> B0 B13 00 00 00 B0 D1152 D2
+
+
+///////////
+// Trap //
+/////////
+
+[ITEMDEF i_baron_trap]
+ID=i_fx_sparkle
+TYPE=t_eq_script
+NAME=sparkles
+
+ON=@Step
+IF (<SRC.NPC>)
+RETURN 1
+ENDIF
+
+IF (<SRC.ISPLAYER>)
+SRC.SAYU=*bad ass message here*
+SRC.DAMAGE {20 40}
+LINK=<src.uid>
+LINK.newitem=i_FIRE_COLUMN
+LINK.ACT.color=060
+LINK.ACT.p=<link.p>
+LINK.ACT.timer=2
+LINK.ACT.attr=attr_static|attr_decay
+LINK.ACT.type=t_normal
+LINK.ACT.move=n 1
+LINK.newitem=i_FIRE_COLUMN
+LINK.ACT.color=060
+LINK.ACT.p=<link.p>
+LINK.ACT.timer=2
+LINK.ACT.attr=attr_static|attr_decay
+LINK.ACT.type=t_normal
+LINK.ACT.move=ne 1
+LINK.newitem=i_FIRE_COLUMN
+LINK.ACT.color=060
+LINK.ACT.p=<link.p>
+LINK.ACT.timer=2
+LINK.ACT.attr=attr_static|attr_decay
+LINK.ACT.type=t_normal
+LINK.ACT.move=e 1
+LINK.newitem=i_FIRE_COLUMN
+LINK.ACT.color=060
+LINK.ACT.p=<link.p>
+LINK.ACT.timer=2
+LINK.ACT.attr=attr_static|attr_decay
+LINK.ACT.type=t_normal
+LINK.ACT.move=nw 1
+LINK.newitem=i_FIRE_COLUMN
+LINK.ACT.color=060
+LINK.ACT.p=<link.p>
+LINK.ACT.timer=2
+LINK.ACT.attr=attr_static|attr_decay
+LINK.ACT.type=t_normal
+LINK.ACT.move=s 1
+LINK.newitem=i_FIRE_COLUMN
+LINK.ACT.color=060
+LINK.ACT.p=<link.p>
+LINK.ACT.timer=2
+LINK.ACT.attr=attr_static|attr_decay
+LINK.ACT.type=t_normal
+LINK.ACT.move=se 1
+LINK.newitem=i_FIRE_COLUMN
+LINK.ACT.color=060
+LINK.ACT.p=<link.p>
+LINK.ACT.timer=2
+LINK.ACT.attr=attr_static|attr_decay
+LINK.ACT.type=t_normal
+LINK.ACT.move=sw 1
+LINK.newitem=i_FIRE_COLUMN
+LINK.ACT.color=060
+LINK.ACT.p=<link.p>
+LINK.ACT.timer=2
+LINK.ACT.attr=attr_static|attr_decay
+LINK.ACT.type=t_normal
+LINK.ACT.move=w 1
+REMOVE
+ENDIF
+
+/////////////////////////////
+///Soldiers - Sword User ///
+///////////////////////////
+
+[CHARDEF c_baron_clone_sword]
+ID=C_MAN
+NAME=Grim Baron Soldier
+SOUND=snd_HUMAN_M_DIE_01
+DAM=15
+ARMOR=1
+CAN=MT_WALK|MT_USEHANDS|MT_EQUIP|MT_MOUNT
+TEVENTS = e_baron_clone
+
+ON=@Create
+  COLOR		= 060
+  STR		= {100 150}
+  DEX		= {80 95}
+  INT		= {71 85}
+  NPC		= brain_monster
+  PARRYING	= {75.0 80.0}
+  SWORDSMANSHIP	= {60.0 70.0}
+  WRESTLING	= {67.0 90.0}
+  MAGICRESISTANCE={115.0 130.0}
+  TACTICS	= {60.0 80.0}
+  POISONING	= {90.0 100.0}
+  DETECTION	={40.0 50.0}
+  ANATOMY       = {40.0 50.0}
+  FAME		= 3000
+  KARMA	= -9000
+
+  ITEMNEWBIE=i_sword_long_b_skargard
+  ITEMNEWBIE=i_robe
+  COLOR=077b
+  ITEMNEWBIE=i_boots_calf
+  COLOR=01
+  ITEMNEWBIE=i_SASH
+  COLOR=0799
+
+CATEGORY=Imperial uo 
+SUBSECTION=Ice Dungeon Monsters
+DESCRIPTION=Frozen baron Clone (sword)
+
+/////////////////////////////
+///Soldiers - Mage User ///
+///////////////////////////
+
+
+[CHARDEF c_baron_clone_mage]
+ID=C_MAN
+NAME=Grim Baron Soldier
+SOUND=snd_HUMAN_M_DIE_01
+DAM=10
+ARMOR=1
+CAN=MT_WALK|MT_USEHANDS|MT_EQUIP|MT_MOUNT
+TEVENTS = e_baron_clone
+
+ON=@Create
+  COLOR		= 060
+  STR		= {100 150}
+  DEX		= {80 95}
+  INT		= {71 85}
+  NPC		= brain_monster
+  PARRYING	= {75.0 80.0}
+  SWORDSMANSHIP	= {60.0 70.0}
+  WRESTLING	= {67.0 90.0}
+  MAGICRESISTANCE={150.0 180.0}
+  TACTICS	= {60.0 80.0}
+  POISONING	= {90.0 100.0}
+  DETECTION	={40.0 50.0}
+  ANATOMY       = {40.0 50.0}
+  MAGERY = 150.0
+  FAME		= 3000
+  KARMA	= -9000
+
+  ITEMNEWBIE=i_spellbook
+  ADDSPELL=s_paralyze
+  ADDSPELL=s_feeblemind
+  ADDSPELL=s_magic_arrow
+  ADDSPELL=s_harm
+  ADDSPELL=s_curse
+  COLOR=060
+  ITEMNEWBIE=i_cape
+  COLOR=060
+  ITEMNEWBIE=i_robe
+  COLOR=077b
+  ITEMNEWBIE=i_boots_calf
+  COLOR=01
+  ITEMNEWBIE=i_SASH
+  COLOR=0799
+
+CATEGORY=Imperial uo 
+SUBSECTION=Ice Dungeon Monsters
+DESCRIPTION=Frozen baron Clone (Mage)
+
+///////////////////////////////
+///Soldiers - Halberd User ///
+/////////////////////////////
+
+
+[CHARDEF c_baron_clone_halberd]
+ID=C_MAN
+NAME=Grim Baron Soldier
+SOUND=snd_HUMAN_M_DIE_01
+DAM=15,17
+ARMOR=1
+CAN=MT_WALK|MT_USEHANDS|MT_EQUIP|MT_MOUNT
+TEVENTS = e_baron_clone
+
+ON=@Create
+  COLOR		= 060
+  STR		= {100 150}
+  DEX		= {80 95}
+  INT		= {71 85}
+  NPC		= brain_monster
+  PARRYING	= {75.0 80.0}
+  SWORDSMANSHIP	= {60.0 70.0}
+  WRESTLING	= {67.0 90.0}
+  MAGICRESISTANCE={115.0 130.0}
+  TACTICS	= {60.0 80.0}
+  POISONING	= {90.0 100.0}
+  DETECTION	={40.0 50.0}
+  ANATOMY       = {40.0 50.0}
+  FAME		= 3000
+  KARMA	= -9000
+
+//  ITEMNEWBIE=i_platemail_gloves_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_helm_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_arms_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_gorget_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_chest_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_leggings_terathane
+//  COLOR=077B
+  ITEMNEWBIE=i_halberd_skargard
+  ITEMNEWBIE=i_robe
+  COLOR=077B
+  ITEMNEWBIE=i_boots_calf
+  COLOR=01
+  ITEMNEWBIE=i_SASH
+  COLOR=0799
+
+CATEGORY=Imperial uo 
+SUBSECTION=Ice Dungeon Monsters
+DESCRIPTION=Frozen baron Clone (Halberd)
+
+///////////////
+/// Bosses ///
+/////////////
+
+[CHARDEF c_baron_boss_sword]
+ID=C_MAN
+NAME=Grim Baron Soldier
+SOUND=snd_HUMAN_M_DIE_01
+DAM=10,20
+ARMOR=30
+CAN=MT_WALK|MT_USEHANDS|MT_EQUIP|MT_MOUNT
+TEVENTS = e_baron_boss
+
+ON=@Create
+  COLOR		= 060
+  STR		= {800 1000}
+  DEX		= {80 95}
+  INT		= {71 85}
+  NPC		= brain_monster
+  PARRYING	= {75.0 80.0}
+  SWORDSMANSHIP	= {60.0 70.0}
+  WRESTLING	= {67.0 90.0}
+  MAGICRESISTANCE={1500.0 1800.0}
+  TACTICS	= {60.0 80.0}
+  POISONING	= {90.0 100.0}
+  DETECTION	={40.0 50.0}
+  ANATOMY       = {40.0 50.0}
+  FAME		= 3000
+  KARMA	= -9000
+
+  ITEMNEWBIE=i_sword_long_b_skargard
+  ITEMNEWBIE=i_robe
+  COLOR=077b
+  ITEMNEWBIE=i_boots_calf
+  COLOR=01
+  ITEMNEWBIE=i_SASH
+  COLOR=0799
+
+CATEGORY=Imperial uo 
+SUBSECTION=Ice Dungeon Monsters
+DESCRIPTION=Frozen baron Clone (sword)
+
+//Mage
+
+[CHARDEF c_baron_boss_mage]
+ID=C_MAN
+NAME=Grim Baron Soldier
+SOUND=snd_HUMAN_M_DIE_01
+DAM=10,20
+ARMOR=30
+CAN=MT_WALK|MT_USEHANDS|MT_EQUIP|MT_MOUNT
+TEVENTS = e_baron_boss
+
+ON=@Create
+  COLOR		= 060
+  STR		= {800 1000}
+  DEX		= {80 95}
+  INT		= {71 85}
+  NPC		= brain_monster
+  PARRYING	= {75.0 80.0}
+  SWORDSMANSHIP	= {60.0 70.0}
+  WRESTLING	= {67.0 90.0}
+  MAGICRESISTANCE={1500.0 1800.0}
+  TACTICS	= {60.0 80.0}
+  POISONING	= {90.0 100.0}
+  DETECTION	={40.0 50.0}
+  ANATOMY       = {40.0 50.0}
+  MAGERY = 150.0
+  FAME		= 3000
+  KARMA	= -9000
+
+  ITEMNEWBIE=i_spellbook
+  ADDSPELL=s_paralyze
+  ADDSPELL=s_feeblemind
+  ADDSPELL=s_magic_arrow
+  ADDSPELL=s_harm
+  ADDSPELL=s_curse
+  COLOR=060
+  ITEMNEWBIE=i_cape
+  COLOR=060
+  ITEMNEWBIE=i_robe
+  COLOR=077b
+  ITEMNEWBIE=i_boots_calf
+  COLOR=01
+  ITEMNEWBIE=i_SASH
+  COLOR=0799
+
+CATEGORY=Imperial uo 
+SUBSECTION=Ice Dungeon Monsters
+DESCRIPTION=Frozen baron Clone (Mage)
+
+//Halberd
+
+[CHARDEF c_baron_boss_halberd]
+ID=C_MAN
+NAME=Grim Baron Soldier
+SOUND=snd_HUMAN_M_DIE_01
+DAM=10,20
+ARMOR=30
+CAN=MT_WALK|MT_USEHANDS|MT_EQUIP|MT_MOUNT
+TEVENTS = e_baron_boss
+
+ON=@Create
+  COLOR		= 060
+  STR		= {800 1000}
+  DEX		= {80 95}
+  INT		= {71 85}
+  NPC		= brain_monster
+  PARRYING	= {75.0 80.0}
+  SWORDSMANSHIP	= {60.0 70.0}
+  WRESTLING	= {67.0 90.0}
+  MAGICRESISTANCE={1500.0 1800.0}
+  TACTICS	= {60.0 80.0}
+  POISONING	= {90.0 100.0}
+  DETECTION	={40.0 50.0}
+  ANATOMY       = {40.0 50.0}
+  FAME		= 3000
+  KARMA	= -9000
+
+//  ITEMNEWBIE=i_platemail_gloves_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_helm_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_arms_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_gorget_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_chest_terathane
+//    COLOR=077B
+//  ITEMNEWBIE=i_platemail_leggings_terathane
+//  COLOR=077B
+  ITEMNEWBIE=i_halberd_skargard
+  ITEMNEWBIE=i_robe
+  COLOR=077B
+  ITEMNEWBIE=i_boots_calf
+  COLOR=01
+  ITEMNEWBIE=i_SASH
+  COLOR=0799
+
+CATEGORY=Imperial uo 
+SUBSECTION=Ice Dungeon Monsters
+DESCRIPTION=Frozen baron Clone (Halberd)
+
+/////////////////
+//Spawn Groups//
+///////////////
+
+[SPAWN s_baron_boss]
+DEFNAME=s_baron_boss
+CATEGORY=Spawn Groups
+SUBSECTION=Ice Dungeon
+DESCRIPTION=baron Boss
+ID=c_baron_boss_sword
+ID=c_baron_boss_mage
+ID=c_baron_boss_halberd
+
+[SPAWN s_baron_clone]
+DEFNAME=s_baron_clone
+CATEGORY=Spawn Groups
+SUBSECTION=Ice Dungeon
+DESCRIPTION=baron Clone
+ID=c_baron_clone_sword
+ID=c_baron_clone_mage
+ID=c_baron_clone_halberd
+
+
+
+
+
+[eof]

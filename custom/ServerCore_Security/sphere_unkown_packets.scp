@@ -1,0 +1,97 @@
+//Unknown Packets
+[function f_packet_0x0a]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0c]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0e]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x011]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x014]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x01b]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x01c]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x02d]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x02f]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x031]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x033]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x040]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x047]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x048]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x049]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x04b]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET 0x4b.
+[function f_packet_0x04e]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x058]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET 0x58.
+[function f_packet_0x05b]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x060]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x061]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x065]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET 0x65.
+[function f_packet_0x070]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x077]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x078]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x087]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x08e]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET 0x8e.
+[function f_packet_0x08f]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x090]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x097]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x09c]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0a1]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0a8]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0aa]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0b0]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0bc]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0be]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0c0]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET 0xc0.
+[function f_packet_0x0c3]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0c4]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0c7]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0cb]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0cc]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0dc]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0e6]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0f2]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+[function f_packet_0x0fd]
+serv.log <SRC.NAME> <SRC.ACCOUNT> SENDING UNKNOWN PACKET.
+
+[EOF]

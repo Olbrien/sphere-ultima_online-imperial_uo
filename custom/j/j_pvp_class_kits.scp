@@ -1,0 +1,885 @@
+//---------------------------Class based PvP---------------------------
+//
+//---------------------------Selection Stone---------------------------
+//
+//---------------------------------------------------------------------
+
+[ITEMDEF i_blue_kit_selector]
+ID=i_guildstone
+NAME=Blue Team Kit Selector
+TYPE=t_script
+
+ON=@CREATE
+   COLOR=05c
+
+ON=@DCLICK
+   DIALOG d_kit_blue_setup
+   RETURN 1
+
+[ITEMDEF i_red_kit_selector]
+ID=i_guildstone
+NAME=Red Team Kit Selector
+TYPE=t_script
+
+ON=@CREATE
+   COLOR=025
+
+ON=@DCLICK
+   DIALOG d_kit_red_setup
+   RETURN 1
+   
+   
+//---------------------------------Gump--------------------------------
+
+[DIALOG d_kit_blue_setup]
+0,0
+page 1
+//Main background
+GUMPPIC 100 100 10
+GUMPPIC 100 100 12
+DTEXT 135 332 92 Blue Team Setup
+DTEXT 135 347 92 Please select your class
+// Tank
+BUTTON 270 198 1209 1210 1 0 101
+DTEXT 288 194 92 Tank
+// Archer
+BUTTON 270 226 1209 1210 1 0 102
+DTEXT 288 222 92 Archer
+// Warrior
+BUTTON 270 254 1209 1210 1 0 103
+DTEXT 288 250 92 Warrior
+// Mage
+BUTTON 270 282 1209 1210 1 0 104
+DTEXT 288 278 92 Mage
+
+[DIALOG d_kit_blue_setup TEXT]
+
+[DIALOG d_kit_blue_setup BUTTON]
+ONBUTTON=101
+   SERV.NEWITEM tm_blue_tank_kit
+   NEW.BOUNCE
+   SERV.NEWITEM tm_blue_mage_tank
+   NEW.BOUNCE
+   SRC.GO <MOREP>
+
+ONBUTTON=102
+   SERV.NEWITEM tm_blue_archer_kit
+   NEW.BOUNCE
+   SRC.GO <MOREP>
+
+ONBUTTON=103
+   SERV.NEWITEM tm_blue_pure_warrior_kit
+   NEW.BOUNCE
+   SRC.GO <MOREP>
+   
+ONBUTTON=104
+   SERV.NEWITEM tm_blue_mage_kit
+   NEW.BOUNCE
+   SERV.NEWITEM tm_blue_mage_pure
+   NEW.BOUNCE
+   SRC.GO <MOREP>
+
+
+
+[DIALOG d_kit_red_setup]
+0,0
+page 1
+//Main background
+GUMPPIC 100 100 10
+GUMPPIC 100 100 12
+DTEXT 135 332 37 Red Team Setup
+DTEXT 135 347 37 Please select your class
+// Tank
+BUTTON 270 198 1209 1210 1 0 101
+DTEXT 288 194 37 Tank
+// Archer
+BUTTON 270 226 1209 1210 1 0 102
+DTEXT 288 222 37 Archer
+// Warrior
+BUTTON 270 254 1209 1210 1 0 103
+DTEXT 288 250 37 Warrior
+// Mage
+BUTTON 270 282 1209 1210 1 0 104
+DTEXT 288 278 37 Mage
+
+[DIALOG d_kit_red_setup TEXT]
+
+[DIALOG d_kit_red_setup BUTTON]
+ONBUTTON=101
+   SERV.NEWITEM tm_red_tank_kit
+   NEW.BOUNCE
+   SERV.NEWITEM tm_red_mage_tank
+   NEW.BOUNCE
+   SRC.GO <MOREP>
+
+ONBUTTON=102
+   SERV.NEWITEM tm_red_archer_kit
+   NEW.BOUNCE
+   SRC.GO <MOREP>
+
+ONBUTTON=103
+   SERV.NEWITEM tm_red_pure_warrior_kit
+   NEW.BOUNCE
+   SRC.GO <MOREP>
+   
+ONBUTTON=104
+   SERV.NEWITEM tm_red_mage_kit
+   NEW.BOUNCE
+   SERV.NEWITEM tm_red_mage_pure
+   NEW.BOUNCE
+   SRC.GO <MOREP>
+
+
+//---------------------------------Kits--------------------------------
+
+
+[TEMPLATE tm_blue_bard_resources]
+CONTAINER=i_bag
+NAME=Blue Team Bard Provisions
+COLOR=05c
+ATTR=01
+
+ITEM=i_potion_ra
+AMOUNT=5
+ITEM=i_potion_refreshgreat
+AMOUNT=10
+ITEM=i_potion_steelskin
+AMOUNT=5
+ITEM=i_potion_emblaze
+AMOUNT=5
+ITEM=i_potion_curegreat
+AMOUNT=10
+ITEM=i_lute
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_lyre
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_tambourine
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_drum
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_tambourine_tas
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_book_songs_war
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+
+
+
+[TEMPLATE tm_blue_mage_tank]
+CONTAINER=i_bag
+NAME=Blue Team Tank Provisions
+COLOR=05c
+ATTR=01
+
+ITEM=i_spellbook
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+MORE1=0fffffffd
+MORE2=0ffffffff
+ITEM=i_reag_black_pearl
+AMOUNT=50
+ITEM=i_reag_blood_moss
+AMOUNT=50
+ITEM=i_reag_garlic
+AMOUNT=50
+ITEM=i_reag_ginseng
+AMOUNT=50
+ITEM=i_reag_mandrake_root
+AMOUNT=50
+ITEM=i_reag_nightshade
+AMOUNT=50
+ITEM=i_reag_sulfur_ash
+AMOUNT=50
+ITEM=i_reag_spider_silk
+AMOUNT=50
+ITEM=i_potion_ra
+AMOUNT=5
+ITEM=i_potion_managreat
+AMOUNT=5
+ITEM=i_potion_permanencegreat
+AMOUNT=5
+ITEM=i_potion_curegreat
+AMOUNT=10
+
+
+
+[TEMPLATE tm_blue_mage_pure]
+CONTAINER=i_bag
+NAME=Blue Team Tank Provisions
+COLOR=05c
+ATTR=01
+
+ITEM=i_spellbook
+ATTR=01
+NAME=Blue Team Mage Kit
+COLOR=05c
+MORE1=0fffffffd
+MORE2=0ffffffff
+ITEM=i_reag_black_pearl
+AMOUNT=150
+ITEM=i_reag_blood_moss
+AMOUNT=150
+ITEM=i_reag_garlic
+AMOUNT=150
+ITEM=i_reag_ginseng
+AMOUNT=150
+ITEM=i_reag_mandrake_root
+AMOUNT=150
+ITEM=i_reag_nightshade
+AMOUNT=150
+ITEM=i_reag_sulfur_ash
+AMOUNT=150
+ITEM=i_reag_spider_silk
+AMOUNT=150
+ITEM=i_potion_ra
+AMOUNT=50
+ITEM=i_potion_managreat
+AMOUNT=50
+ITEM=i_potion_permanencegreat
+AMOUNT=50
+ITEM=i_potion_curegreat
+AMOUNT=50
+
+
+
+[TEMPLATE tm_blue_mage_kit]
+CONTAINER=i_bag
+NAME=Blue Team Mage Kit
+COLOR=05c
+ATTR=01
+   
+ITEM=i_verite_platemail_arms
+ATTR=01
+NAME=Blue Team Mage Kit
+COLOR=05c
+ITEM=i_mytheril_ringmail_gloves
+ATTR=01
+NAME=Blue Team Mage Kit
+COLOR=05c
+ITEM=i_mytheril_chainmail_tunic
+ATTR=01
+NAME=Blue Team Mage Kit
+COLOR=05c
+ITEM=i_verite_platemail_leggings
+ATTR=01
+NAME=Blue Team Mage Kit
+COLOR=05c
+ITEM=i_bandage
+AMOUNT=50
+
+
+[TEMPLATE tm_blue_tank_kit]
+CONTAINER=i_bag
+NAME=Blue Team Tank Kit
+COLOR=05c
+ATTR=01
+   
+ITEM=i_verite_platemail_arms
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+ITEM=i_mytheril_ringmail_gloves
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+ITEM=i_dragonhide_crystal_tunic
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+ITEM=i_verite_platemail_leggings
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+ITEM=i_dragonhide_crystal_gorget
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+ITEM=i_shield_heater_adamantine
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+ITEM=i_katana_adamantine
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+ITEM=i_maul_adamantine
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+ITEM=i_kryss_adamantine
+ATTR=01
+NAME=Blue Team Tank Kit
+COLOR=05c
+ITEM=i_bandage
+AMOUNT=50
+
+
+[TEMPLATE tm_blue_archer_kit]
+CONTAINER=i_bag
+NAME=Blue Team Archer Kit
+COLOR=05c
+ATTR=01
+   
+ITEM=i_verite_platemail_arms
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_mytheril_ringmail_gloves
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_dragonhide_crystal_tunic
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_verite_platemail_leggings
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_dragonhide_crystal_gorget
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_shield_heater_adamantine
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_katana_adamantine
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_maul_adamantine
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_kryss_adamantine
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_bow_myst
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_crossbow_myst
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_crossbow_heavy_myst
+ATTR=01
+NAME=Blue Team Archer Kit
+COLOR=05c
+ITEM=i_xbolt
+AMOUNT=150
+ITEM=i_arrow
+AMOUNT=150
+ITEM=i_bandage
+AMOUNT=50
+
+
+[TEMPLATE tm_blue_pure_warrior_kit]
+CONTAINER=i_bag
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ATTR=01
+   
+ITEM=i_platemail_gorget_entit
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_platemail_gloves_entit
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_platemail_arms_entit
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_platemail_leggings_entit
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_platemail_chest_entit
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_helm_nose_entit
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_shield_heater_entit
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_maul_adamantine
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_staff_quarter_myst
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_mace_war_adamantine
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_kryss_adamantine
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_spear_adamantine
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_war_fork_adamantine
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_halberd_adamantine
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_sword_broad_adamantine
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_katana_adamantine
+ATTR=01
+NAME=Blue Team Pure Warrior Kit
+COLOR=05c
+ITEM=i_bandage
+AMOUNT=100
+
+
+[TEMPLATE tm_blue_war_bard_kit]
+CONTAINER=i_bag
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ATTR=01
+   
+ITEM=i_valorite_platemail_arms
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_mytheril_ringmail_gloves
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_dragonhide_crystal_tunic
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_valorite_platemail_leggings
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_dragonhide_crystal_gorget
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_shield_heater_adamantine
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_katana_adamantine
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_maul_adamantine
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_kryss_adamantine
+ATTR=01
+NAME=Blue Team War Bard Kit
+COLOR=05c
+ITEM=i_bandage
+AMOUNT=50
+
+
+[TEMPLATE tm_red_bard_resources]
+CONTAINER=i_bag
+NAME=Red Team Bard Provisions
+COLOR=025
+ATTR=01
+
+ITEM=i_potion_ra
+AMOUNT=5
+ITEM=i_potion_refreshgreat
+AMOUNT=10
+ITEM=i_potion_steelskin
+AMOUNT=5
+ITEM=i_potion_emblaze
+AMOUNT=5
+ITEM=i_potion_curegreat
+AMOUNT=10
+ITEM=i_lute
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_lyre
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_tambourine
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_drum
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_tambourine_tas
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_book_songs_war
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+
+
+
+[TEMPLATE tm_red_mage_tank]
+CONTAINER=i_bag
+NAME=Red Team Tank Provisions
+COLOR=025
+ATTR=01
+
+ITEM=i_spellbook
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+MORE1=0fffffffd
+MORE2=0ffffffff
+ITEM=i_reag_black_pearl
+AMOUNT=50
+ITEM=i_reag_blood_moss
+AMOUNT=50
+ITEM=i_reag_garlic
+AMOUNT=50
+ITEM=i_reag_ginseng
+AMOUNT=50
+ITEM=i_reag_mandrake_root
+AMOUNT=50
+ITEM=i_reag_nightshade
+AMOUNT=50
+ITEM=i_reag_sulfur_ash
+AMOUNT=50
+ITEM=i_reag_spider_silk
+AMOUNT=50
+ITEM=i_potion_ra
+AMOUNT=5
+ITEM=i_potion_managreat
+AMOUNT=5
+ITEM=i_potion_permanencegreat
+AMOUNT=5
+ITEM=i_potion_curegreat
+AMOUNT=10
+
+
+
+[TEMPLATE tm_red_mage_pure]
+CONTAINER=i_bag
+NAME=Red Team Tank Provisions
+COLOR=025
+ATTR=01
+
+ITEM=i_spellbook
+ATTR=01
+NAME=Red Team Mage Kit
+COLOR=025
+MORE1=0fffffffd
+MORE2=0ffffffff
+ITEM=i_reag_black_pearl
+AMOUNT=150
+ITEM=i_reag_blood_moss
+AMOUNT=150
+ITEM=i_reag_garlic
+AMOUNT=150
+ITEM=i_reag_ginseng
+AMOUNT=150
+ITEM=i_reag_mandrake_root
+AMOUNT=150
+ITEM=i_reag_nightshade
+AMOUNT=150
+ITEM=i_reag_sulfur_ash
+AMOUNT=150
+ITEM=i_reag_spider_silk
+AMOUNT=150
+ITEM=i_potion_ra
+AMOUNT=50
+ITEM=i_potion_managreat
+AMOUNT=50
+ITEM=i_potion_permanencegreat
+AMOUNT=50
+ITEM=i_potion_curegreat
+AMOUNT=50
+
+
+
+[TEMPLATE tm_red_mage_kit]
+CONTAINER=i_bag
+NAME=Red Team Mage Kit
+COLOR=025
+ATTR=01
+   
+ITEM=i_verite_platemail_arms
+ATTR=01
+NAME=Red Team Mage Kit
+COLOR=025
+ITEM=i_mytheril_ringmail_gloves
+ATTR=01
+NAME=Red Team Mage Kit
+COLOR=025
+ITEM=i_mytheril_chainmail_tunic
+ATTR=01
+NAME=Red Team Mage Kit
+COLOR=025
+ITEM=i_verite_platemail_leggings
+ATTR=01
+NAME=Red Team Mage Kit
+COLOR=025
+ITEM=i_bandage
+AMOUNT=25
+
+
+[TEMPLATE tm_red_tank_kit]
+CONTAINER=i_bag
+NAME=Red Team Tank Kit
+COLOR=025
+ATTR=01
+   
+ITEM=i_verite_platemail_arms
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+ITEM=i_mytheril_ringmail_gloves
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+ITEM=i_dragonhide_crystal_tunic
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+ITEM=i_verite_platemail_leggings
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+ITEM=i_dragonhide_crystal_gorget
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+ITEM=i_shield_heater_adamantine
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+ITEM=i_katana_adamantine
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+ITEM=i_maul_adamantine
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+ITEM=i_kryss_adamantine
+ATTR=01
+NAME=Red Team Tank Kit
+COLOR=025
+ITEM=i_bandage
+AMOUNT=50
+
+
+[TEMPLATE tm_red_archer_kit]
+CONTAINER=i_bag
+NAME=Red Team Archer Kit
+COLOR=025
+ATTR=01
+   
+ITEM=i_verite_platemail_arms
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_mytheril_ringmail_gloves
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_dragonhide_crystal_tunic
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_verite_platemail_leggings
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_dragonhide_crystal_gorget
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_shield_heater_adamantine
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_katana_adamantine
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_maul_adamantine
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_kryss_adamantine
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_bow_myst
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_crossbow_myst
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_crossbow_heavy_myst
+ATTR=01
+NAME=Red Team Archer Kit
+COLOR=025
+ITEM=i_xbolt
+AMOUNT=150
+ITEM=i_arrow
+AMOUNT=150
+ITEM=i_bandage
+AMOUNT=50
+
+
+[TEMPLATE tm_red_pure_warrior_kit]
+CONTAINER=i_bag
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ATTR=01
+   
+ITEM=i_platemail_gorget_entit
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_platemail_gloves_entit
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_platemail_arms_entit
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_platemail_leggings_entit
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_platemail_chest_entit
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_helm_nose_entit
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_shield_heater_entit
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_maul_adamantine
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_staff_quarter_myst
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_mace_war_adamantine
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_kryss_adamantine
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_spear_adamantine
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_war_fork_adamantine
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_halberd_adamantine
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_sword_broad_adamantine
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_katana_adamantine
+ATTR=01
+NAME=Red Team Pure Warrior Kit
+COLOR=025
+ITEM=i_bandage
+AMOUNT=100
+
+
+[TEMPLATE tm_red_war_bard_kit]
+CONTAINER=i_bag
+NAME=Red Team War Bard Kit
+COLOR=025
+ATTR=01
+   
+ITEM=i_valorite_platemail_arms
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_mytheril_ringmail_gloves
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_dragonhide_crystal_tunic
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_valorite_platemail_leggings
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_dragonhide_crystal_gorget
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_shield_heater_adamantine
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_katana_adamantine
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_maul_adamantine
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_kryss_adamantine
+ATTR=01
+NAME=Red Team War Bard Kit
+COLOR=025
+ITEM=i_bandage
+AMOUNT=50
+
+

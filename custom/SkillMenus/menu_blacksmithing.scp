@@ -1,0 +1,103 @@
+// Blacksmithing section
+
+[SKILLMENU sm_blacksmith]
+Blacksmithing
+
+ON=i_repair_deed_copper Repair Deeds
+SKILLMENU=sm_repair_deeds
+
+// ON=i_ANVIL Repair	// pretty much anyone can attempt to repair.
+// TESTIF=( <BLACKSMITHING> >= 1.0 )
+// REPAIR
+
+//ON=I_Pickaxe_rare1 <name> (<resmake>)
+//MAKEITEM=I_Pickaxe_rare1
+//TAG.MAKEITEM.LEVEL	= 100.0
+
+//ON=I_Pickaxe_rare2 <name> (<resmake>)
+//MAKEITEM=I_Pickaxe_rare2
+//TAG.MAKEITEM.LEVEL	= 100.0
+
+//ON=I_Pickaxe_rare <name> (<resmake>)
+//MAKEITEM=I_Pickaxe_rare
+//TAG.MAKEITEM.LEVEL	= 100.0
+
+ON=i_ingot_bronze <name> (<resmake>)
+MAKEITEM=i_ingot_bronze
+TAG.MAKEITEM.LEVEL	= 20.0
+
+//ON=i_ingot_brass <name> (<resmake>)
+//MAKEITEM=i_ingot_brass
+//TAG.MAKEITEM.LEVEL	= 25.0
+
+ON=i_ingot_steel <name> (<resmake>)
+MAKEITEM=i_ingot_steel
+TAG.MAKEITEM.LEVEL	= 30.0
+
+//ON=i_ingot_chrome <name> (<resmake>)
+//MAKEITEM=i_ingot_chrome
+//TAG.MAKEITEM.LEVEL	= 30.0
+
+ON=i_ingot_adamantine <name> (<resmake>)
+MAKEITEM=i_ingot_adamantine
+TAG.MAKEITEM.LEVEL	= 40.0
+
+ON=i_ingot_phoenix <name> (<resmake>)
+MAKEITEM=i_ingot_phoenix
+TAG.MAKEITEM.LEVEL	= 50.0
+
+ON=i_ingot_entit <name> (<resmake>)
+MAKEITEM=i_ingot_entit
+TAG.MAKEITEM.LEVEL	= 60.0
+
+ON=i_ingot_verminard <name> (<resmake>)
+MAKEITEM=i_ingot_verminard
+TAG.MAKEITEM.LEVEL	= 60.0
+
+ON=i_ingot_stronghold <name> (<resmake>)
+MAKEITEM=i_ingot_stronghold
+TAG.MAKEITEM.LEVEL	= 60.0
+
+//ON=i_ingot_blackrock <name> (<resmake>)
+//MAKEITEM=i_ingot_blackrock
+//TAG.MAKEITEM.LEVEL	= 80.0
+
+ON=i_ingot_bloodrock <name> (<resmake>)
+MAKEITEM=i_ingot_bloodrock
+TAG.MAKEITEM.LEVEL	= 80.0
+
+
+// New Alloys
+
+ON=i_ingot_valorite <name> (<resmake>)
+MAKEITEM=i_ingot_valorite
+TAG.MAKEITEM.LEVEL	= 40.0
+
+ON=i_ingot_verite <name> (<resmake>)
+MAKEITEM=i_ingot_verite
+TAG.MAKEITEM.LEVEL	= 40.0
+
+ON=i_sword_great Bladed weapons
+SKILLMENU=sm_bladed_weapons
+
+ON=i_axe Axes
+SKILLMENU=sm_axe_weapons
+
+ON=i_mace Blunt weapons
+SKILLMENU=sm_blunt_weapons
+
+ON=i_spear_short Pole weapons
+SKILLMENU=sm_pole_weapons
+
+ON=i_chainmail_tunic Mail armour
+SKILLMENU=sm_mail_armour
+
+ON=i_platemail_chest Plate armour
+SKILLMENU=sm_plate_armour
+
+ON=i_shield_round Shields
+SKILLMENU=sm_shields
+
+
+
+[EOF]

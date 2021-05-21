@@ -1,0 +1,99 @@
+[CHARDEF c_shambling_mound]
+DEFNAME=c_shambling_mound
+NAME=Shambling Mound
+SOUND=snd_ELEMENTL_ERTHEL1
+ID=c_elem_earth
+DAM=20,45
+ARMOR=25
+CAN=MT_WALK|MT_GHOST
+
+DESIRES=r_caves
+BLOODCOLOR=colors_green
+
+CATEGORY=Imperial uo
+SUBSECTION=Sqweak
+DESCRIPTION=Shambling mound
+
+ON=@Create
+COLOR=0852
+NPC=brain_monster
+FAME={100 600}
+KARMA={-3000 -3999}
+
+//ALIGNMENT=EVIL
+STR={155 225}
+DEX={120 160}
+INT={171 392}
+
+PARRYING={40.0 100.0}
+MAGICRESISTANCE={70.0 95.0}
+TACTICS={60.0 100.0}
+WRESTLING={80.0 100.0}
+MAGERY={100.0 180.0}
+ITEMNEWBIE	=i_spellbook
+	ADDSPELL s_paralyze
+
+ON=@NPCRestock
+   ITEM=i_gold,{80 160}
+   
+ON=@DEATH
+IF (RAND(100) < 10) // Chance de Dropar. Assim é 5%
+SERV.NEWITEM=i_imperial_SHAMBLING_key  // ID da chave que vai dropar
+NEW.CONT=<SRC.UID>
+ENDIF
+   
+
+ON=@DeathCorpse
+   SERV.NEWITEM i_reag_nightshade, { 3 10 }, <ARGO.UID>
+   SERV.NEWITEM loot_newrares_Easy, 1, <ARGO.UID>
+
+   
+
+[CHARDEF c_shambling_mound1]
+DEFNAME=c_shambling_mound1
+NAME=Shambling Mound
+SOUND=snd_ELEMENTL_ERTHEL1
+ID=c_elem_earth
+DAM=10,60
+ARMOR=25
+CAN=MT_WALK|MT_GHOST
+
+DESIRES=r_caves
+BLOODCOLOR=colors_green
+
+CATEGORY=Imperial uo
+SUBSECTION=Sqweak
+DESCRIPTION=Shambling mound (nonpara)
+
+ON=@Create
+COLOR=0852
+NPC=brain_monster
+FAME={100 600}
+KARMA={-3000 -3999}
+
+//ALIGNMENT=EVIL
+STR={155 225}
+DEX={120 160}
+INT={171 392}
+
+PARRYING={40.0 100.0}
+MAGICRESISTANCE={70.0 95.0}
+TACTICS={60.0 100.0}
+WRESTLING={80.0 100.0}
+
+ON=@NPCRestock
+   ITEM=i_gold,{80 160}
+
+ON=@DEATH
+IF (RAND(100) < 10) // Chance de Dropar. Assim é 5%
+SERV.NEWITEM=i_imperial_SHAMBLING_key  // ID da chave que vai dropar
+NEW.CONT=<SRC.UID>
+ENDIF
+
+   
+ON=@DeathCorpse
+   SERV.NEWITEM i_reag_nightshade, { 3 10 }, <ARGO.UID>
+   SERV.NEWITEM loot_newrares_Easy, 1, <ARGO.UID>
+
+   
+[EOF]

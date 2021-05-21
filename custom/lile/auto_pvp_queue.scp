@@ -1,0 +1,550 @@
+// VARS
+// TDM_active = game in motion
+// tdm_max_players = number of players limit
+
+// VAR.tdm_match_start = timer for match to begin
+// VAR.tdm_kill_win = First team to this kill count wins
+
+// SERV.LIST.TDM_QUEUE = current queued players
+// SERV.LIST.TDM_PLAYERS = current match players
+// SERV.LIST.TDM_BLUE = current match players
+// SERV.LIST.TDM_RED = current match players
+
+
+//should kit be equipped before the match? Aka, must be in Moonglow to run the queue command - safe zone to wear it.
+// When we hit 10 in queue, we randomly split teams and Incognito.
+
+// Serps - 10 YY
+// cove 10 YY
+// yew 10 YY
+// Deceit 10 Y
+// orc fort 20 Y
+// Magincia 10 Y
+
+// Skara Brae 10 Y - if not in use - need to remove bank and lelanis
+// Jhelom 20 - bit shit?
+// vesper 10 - bit shit?
+
+// res, stone, invis on death
+// 7 seconds
+// move to spawn point
+// 3 seconds
+// unstone and uninvis
+
+// 20 spawn locations per map, respawn at random one
+
+[PLEVEL 0]
+tdm
+unqueue
+tdm_rules
+
+[PLEVEL 4]
+clearqueue
+tdmreset
+
+
+[FUNCTION tdmreset]
+clearqueue
+clearplayers
+clearblue
+clearred
+VAR.TDM_active = 0
+src.sysmessage Cleared.
+
+
+[FUNCTION clearqueue]
+	FOR 0 <eval <tdm_queue_size>-1>
+		TRYSRC <LIST.TDM_QUEUE.<LOCAL._FOR>> SRC.EVENTS -e_queuing
+	ENDFOR
+	LIST.TDM_QUEUE.CLEAR
+
+[FUNCTION clearblue]
+		FOR 0 <eval <tdm_blue_size>-1>
+			TRYSRC <LIST.TDM_BLUE.<LOCAL._FOR>> SRC.EVENTS -e_tdm_match
+		ENDFOR
+		LIST.TDM_BLUE.CLEAR
+
+[FUNCTION clearred]
+		FOR 0 <eval <tdm_red_size>-1>
+			TRYSRC <LIST.TDM_RED.<LOCAL._FOR>> SRC.EVENTS -e_tdm_match
+		ENDFOR
+		LIST.TDM_RED.CLEAR
+
+[FUNCTION clearplayers]
+	LIST.TDM_PLAYERS.CLEAR
+
+[FUNCTION isqueued]
+	IF (<tdm_queue_size> > 0) && (<LIST.TDM_QUEUE.FINDELEM <UID>> >= 0)
+		RETURN 1
+	ELSE
+		RETURN 0
+	ENDIF
+
+[FUNCTION tdm_active]
+	RETURN 0<VAR.TDM_ACTIVE>
+	
+[FUNCTION tdm_add_to_queue]
+	LIST.TDM_QUEUE.ADD <UID>
+	EVENTS +e_queuing
+	SRC.SYSMESSAGE @07aa You have been placed in the Team Deathmatch queue.
+	SERV.ALLCLIENTS sysmessage @07ac Someone has just joined the Team Deathmatch queue! Queue size is: <tdm_queue_size>/<eval 0<VAR.tdm_max_players>>.
+	tdm_check_queue
+	
+[FUNCTION tdm_remove_from_queue]
+	LIST.TDM_QUEUE.<LIST.TDM_QUEUE.FINDELEM <SRC.UID>>.REMOVE
+	SRC.EVENTS -e_queuing
+	SRC.SYSMESSAGE @07aa You have been removed from the Team Deathmatch queue.	
+	FOR 0 <eval <tdm_queue_size>>
+		TRYSRC <UID.<LIST.TDM_QUEUE.<LOCAL._FOR>>> SRC.sysmessage @07ac Someone left the Team Deathmatch Queue! Queue size is: <tdm_queue_size>/<eval 0<VAR.tdm_max_players>>.
+	ENDFOR
+	
+[FUNCTION tdm_queue_size]
+	RETURN <eval 0<LIST.TDM_QUEUE.COUNT>>
+	
+[FUNCTION tdm_players_size]
+	RETURN <eval 0<LIST.TDM_PLAYERS.COUNT>>
+	
+[FUNCTION tdm_blue_size]
+	RETURN <eval 0<LIST.TDM_BLUE.COUNT>>
+	
+[FUNCTION tdm_red_size]
+	RETURN <eval 0<LIST.TDM_RED.COUNT>>
+	
+	
+[FUNCTION tdm_match_start]
+	RETURN <eval 0<VAR.tdm_match_start>>
+	
+	
+[FUNCTION tdm_refresh_queue]
+	VAR.tdm_max_players = 4 //SET THIS TO THE MAX ENTRANTS, MUST BE EVEN!
+	
+	IF <tdm_queue_size>
+		FOR 0 <eval <tdm_queue_size>-1>
+			//serv.log REFRESH: <LIST.TDM_QUEUE.<LOCAL._FOR>>
+			IF (<UID.<LIST.TDM_QUEUE.<LOCAL._FOR>>.FLAGS> & statf_war)
+				TRYSRC <UID.<LIST.TDM_QUEUE.<LOCAL._FOR>>> SRC.tdm_remove_from_queue
+			ELSEIF (<UID.<LIST.TDM_QUEUE.<LOCAL._FOR>>.MEMORYFINDTYPE.memory_fight>)
+				TRYSRC <UID.<LIST.TDM_QUEUE.<LOCAL._FOR>>> SRC.tdm_remove_from_queue
+			ENDIF
+		ENDFOR
+	ENDIF
+	
+[FUNCTION tdm_check_queue]
+	IF (<tdm_queue_size> == <VAR.tdm_max_players>)
+		SERV.ALLCLIENTS sysmessage @07ad A Team Deathmatch is about to kick off!
+		tdm_init_match
+	ENDIF
+	
+[FUNCTION tdm_init_match]
+	FOR 0 <eval <tdm_queue_size>-1>
+		LIST.TDM_PLAYERS.ADD <LIST.TDM_QUEUE.<LOCAL._FOR>>
+		TRYSRC <UID.<LIST.TDM_QUEUE.<LOCAL._FOR>>> SRC.EVENTS -e_queuing
+		TRYSRC <UID.<LIST.TDM_QUEUE.<LOCAL._FOR>>> SRC.EVENTS +e_tdm_match
+	ENDFOR
+	VAR.TDM_ACTIVE = 1
+	CLEARQUEUE
+	tdm_make_teams
+	
+[FUNCTION tdm_make_teams]
+	FOR 0 <eval <tdm_players_size>-1>
+		DORAND 2
+			tdm_add_to_blue <LIST.TDM_PLAYERS.<LOCAL._FOR>>
+			tdm_add_to_red <LIST.TDM_PLAYERS.<LOCAL._FOR>>
+		ENDDO
+		TRYSRC <UID.<LIST.TDM_PLAYERS.<LOCAL._FOR>>> SRC.tdm_ready_player
+	ENDFOR
+	
+[FUNCTION tdm_ready_player]
+	VAR.tdm_match_start = 20
+	VAR.tdm_kill_win = 20
+	spelleffect s_dispel,1000
+	if (<findlayer.layer_horse.uid> ) 
+		act=<findlayer.layer_horse.more2> 
+		dclick
+		tag.TDM.mount = <act.uid>
+		act.shrink
+		bounce <act.actarg1>
+		obj = <uid.<act.actarg1>>
+		obj.attr=05
+		tag.TDM.pet = <obj.uid>
+	ENDIF
+	tag.TDM.kills=<kills>
+	tag.TDM.deaths=<deaths>
+	tag.TDM.karma=<karma>
+	tag.TDM.fame=<fame>
+	tag.TDM.p=<p>
+	tag.TDM.name=<name>
+	name=?
+	stone
+	invis
+	go 6054, 47, 0, 10
+	sdialog d_tdm_waiting
+	TIMERF 1, tdm_refresh_d_wait
+	TIMERF <eval <tdm_match_start>-5>, tdm_countdown 5
+	TIMERF <tdm_match_start>, tdm_spawn
+
+[FUNCTION tdm_refresh_d_wait]
+	VAR.tdm_match_start -= 1
+	tdm_close_dialogs
+	sdialog d_tdm_waiting
+	IF (<VAR.tdm_match_start> > 5)
+		TIMERF 1, tdm_refresh_d_wait
+	ENDIF
+	
+[FUNCTION tdm_countdown]
+	tdm_close_dialogs
+	sysmessage @07aa <ARGN>...
+	IF (<ARGN> > 1)
+		TIMERF 1, tdm_countdown <eval <ARGN>-1>
+	ENDIF
+	
+[FUNCTION tdm_spawn]
+	sysmessage @07aa GO!!
+	go 1,1 //random spawn point from map - use defnames?
+	stone
+	invis
+	
+	
+[FUNCTION tdm_restore]
+	spelleffect s_dispel,1000
+	kills = <tag.TDM.kills>
+	deaths = <tag.TDM.deaths>
+	karma = <tag.TDM.karma>
+	fame = <tag.TDM.fame>
+	name = <tag.TDM.name>
+	UID.<tag.TDM.pet>.DCLICK    
+    UID.<tag.TDM.mount>.DCLICK
+	go <tag.TDM.p>
+	tag.TDM.kills
+	tag.TDM.deaths
+	tag.TDM.karma
+	tag.TDM.fame
+	tag.TDM.p
+	tag.TDM.deaths
+	tag.TDM.name
+	tdm_remove_robe
+	sysmessage @07aa You have left the Team Deathmatch. Thanks for playing. You may now queue up again!
+
+[FUNCTION tdm_add_to_blue]
+	IF <tdm_players_size> //prevent crash on accidental use
+		SERV.LOG ADDING <ARGS> TO TEAM BLUE: <tdm_blue_size> <eval <tdm_players_size>/2>
+		IF ( (<tdm_blue_size>) < (<eval <tdm_players_size>/2>) )
+			LIST.TDM_BLUE.ADD <ARGS>
+			TRYSRC <UID.<ARGS>> SRC.sysmessage @07af You have been placed in the BLUE team.
+			TRYSRC <UID.<ARGS>> SRC.tdm_give_robe 020
+		ELSE
+			tdm_add_to_red <ARGS>
+		ENDIF
+	ENDIF
+
+[FUNCTION tdm_add_to_red]
+	IF <tdm_players_size> //prevent crash on accidental use
+		SERV.LOG ADDING <ARGS> TO TEAM RED: <tdm_red_size> <eval <tdm_players_size>/2>
+		IF ( (<tdm_red_size>) < (<eval <tdm_players_size>/2>) )
+			LIST.TDM_RED.ADD <ARGS>
+			TRYSRC <UID.<ARGS>> SRC.sysmessage @07af You have been placed in the RED team.
+			TRYSRC <UID.<ARGS>> SRC.tdm_give_robe 067
+		ELSE
+			tdm_add_to_blue <ARGS>
+		ENDIF
+	ENDIF
+
+[FUNCTION tdm_give_robe]
+	SERV.NEWITEM i_robe
+	NEW.ATTR=ATTR_MOVE_NEVER|ATTR_NEWBIE|ATTR_STATIC
+	NEW.COLOR=<ARGS>
+	NEW.NAME=Deathmatch Robe
+	NEW.TAG.tdm = 1
+	NEW.BOUNCE <SRC.UID>
+	NEW.EQUIP <SRC.UID>
+	
+[FUNCTION tdm_remove_robe]
+	SRC.FINDLAYER.22.REMOVE
+	
+[FUNCTION tdm_close_dialogs]
+	DIALOGCLOSE d_queue
+	DIALOGCLOSE d_unqueue
+	DIALOGCLOSE d_queue_status
+	DIALOGCLOSE d_tdm_death
+	DIALOGCLOSE d_tdm_waiting
+	DIALOGCLOSE d_tdm_rules
+	
+[FUNCTION tdm]
+	tdm_close_dialogs
+	tdm_refresh_queue
+	IF <SRC.ISQUEUED>
+		SRC.sysmessage @07aa You are already in the queue, showing you the current queue status.
+		sdialog d_queue_status
+	ELSEIF (<SRC.FLAGS> & statf_war)
+		IF <SRC.isqueued>
+			SRC.tdm_remove_from_queue
+		ENDIF
+		SRC.sysmessage @07aa You cannont enter the queue while in battle.
+	ELSEIF (<SRC.FLAGS> & statf_dead)
+		SRC.sysmessage @07aa You cannot queue while dead! Amateur...
+	ELSEIF (<SRC.FINDID.i_punished_timer>)
+		SRC.sysmessage You are not getting out of jail so easily. . . .
+	ELSEIF (<SRC.TAG0.JACCOUNT>)
+		SRC.sysmessage You are not getting out of jail so easily. . . .
+	ELSEIF !<tdm_active>
+		sdialog d_queue
+	ELSE
+		src.sysmessage @07aa A Team Deathmatch is in progress. Please try again later.
+	ENDIF
+	timerf 10, DIALOGCLOSE d_queue
+	
+[FUNCTION unqueue]
+	tdm_close_dialogs
+	IF <isqueued>
+		sdialog d_unqueue
+	ELSE
+		sysmessage @07aa You are not in the queue. Use .queue to join it.
+	ENDIF
+	
+[FUNCTION tdm_veto]
+	sysmessage @07aa Veto this .!.
+
+[DIALOG d_queue]
+	100, 100
+	PAGE 0
+	resizepic  0 0 5120 400 420
+	text 20 20 50 0
+
+	IF <VAR.TDM_ACTIVE>
+		dtext 20 50 37 2
+	ELSE
+		text 20 50 5185 3 
+		text 20 70 5185 4 
+		text 20 120 67 5 
+		text 20 170 5185 6 
+		text 30 190 37 7 
+		text 30 210 37 8 
+		text 20 230 5185 9
+		text 20 340 50 1
+		button 140 375 <eval bt_cancel_up> <eval bt_cancel_dn> 1 0 0
+		button 220 375 <eval bt_ok_up> <eval bt_ok_dn> 1 0 1
+	ENDIF
+		
+	// dialog box to confirm queue - if not in combat
+	// i_memory_queue +1 MORE1
+	// add queue event - if not been in combat recently.
+	
+
+[DIALOG d_queue TEXT]
+	Welcome to the Team Deathmatch queue
+	Are you sure you want to join the queue?
+	There is a game in progress, please queue again later.
+	Make sure you are kitted up before joining the queue as
+	you will not have time to bank once the match starts.
+	There are currently <tdm_queue_size> players queued. Need <eval 0<VAR.tdm_max_players>> to start.
+	You will be removed from the queue if:
+	- you enter any form of Combat or War Mode.
+	- you logout.
+	## Please read the rules: .tdm_rules ##
+
+[DIALOG d_queue BUTTON]
+	ONBUTTON=1
+		SRC.tdm_add_to_queue
+		sdialog d_queue_status
+		
+	
+[DIALOG d_queue_status]
+	100, 100
+	PAGE 0
+	resizepic  0 0 5120 400 420
+	text 20 20 50 0
+
+	IF <VAR.TDM_ACTIVE>
+		dtext 20 50 37 2
+	ELSE
+		text 20 50 5185 3 
+		text 20 70 5185 4 
+		text 20 120 67 5 
+		text 20 170 5185 6 
+		text 30 190 37 7 
+		text 30 210 37 8 
+		text 20 230 5185 9
+		text 20 280 5185 10
+		text 20 310 50 1
+		button 280 310 <eval bt_ok_up> <eval bt_ok_dn> 1 0 1
+		button 20 375 <eval bt_cancel_up> <eval bt_cancel_dn> 1 0 0
+	ENDIF
+		
+	// map veto
+	// player list?
+	
+
+[DIALOG d_queue_status TEXT]
+	Welcome to the Team Deathmatch queue
+	Don't like this map? Want to Veto it?
+	There is a game in progress, please queue again later.
+	Make sure you are kitted up before joining the queue as
+	you will not have time to bank once the match starts.
+	There are currently <tdm_queue_size> players queued. Need <eval 0<VAR.tdm_max_players>> to start.
+	You will be removed from the queue if:
+	- you enter any form of Combat or War Mode.
+	- you logout.
+	## Please read the rules: .tdm_rules ##
+	The current map is: ...
+		
+
+[DIALOG d_queue_status BUTTON]
+	ONBUTTON=1
+		tdm_veto
+	
+
+[FUNCTION tdm_rules]
+	tdm_close_dialogs
+	sdialog d_tdm_rules
+	
+[DIALOG d_tdm_rules]
+100, 100
+
+PAGE 0
+  resizepic  0 0 5120 530 450
+  text 20 20 50 0
+  text 20 390 50 1
+
+  button 370 390 <eval bt_ok_up> <eval bt_ok_dn> 1 0 0
+
+  htmlgump 20 60 490 320 2 1 1
+
+
+[DIALOG d_tdm_rules TEXT]
+Team Death Match Rules
+Read them all? Good. Then close this and go KILL!
+So, you want to fight in a deathmatch, well you better be paying attention.<VAR.break><VAR.break><VAR.open_bold>Blocked Spells<VAR.close_bold>: <VAR.break>Summons, Mass Spells, Teleport, Recall<VAR.break><VAR.break><VAR.open_bold>Blocked Skills<VAR.close_bold>: <VAR.break>Poisoning, Hiding, Stealth, Necro<VAR.break><VAR.break><VAR.open_bold>Other Rules<VAR.close_bold>: <VAR.break>No Pets<VAR.break>No Team Killing<VAR.break>No Helping Opposite Team Win<VAR.break><VAR.break><VAR.open_bold>Anything else?<VAR.close_bold>: <VAR.break>Ask. And if it feels like cheating, it probably is.
+
+[DIALOG d_unqueue]
+	170, 180
+	PAGE 0
+	resizepic  0 0 5120 400 100
+	text 20 20 50 0
+	button 140 50 <eval bt_cancel_up> <eval bt_cancel_dn> 1 0 0
+	button 220 50 <eval bt_ok_up> <eval bt_ok_dn> 1 0 1
+		
+
+[DIALOG d_unqueue TEXT]
+	Do you want to leave the Team Deathmatch queue?
+
+[DIALOG d_unqueue BUTTON]
+	ONBUTTON=1
+		tdm_remove_from_queue
+
+
+[DIALOG d_tdm_waiting]
+	170, 180
+	NOMOVE
+	NOCLOSE
+	PAGE 0
+	resizepic  0 0 5120 400 140
+	text 20 20 50 0
+	text 20 50 20 1
+	text 20 80 80 2
+	text 20 80 50 3
+
+		
+
+[DIALOG d_tdm_waiting TEXT]
+	You are now waiting for the Deathmatch to begin.
+	Team killing is punishable by death!!
+	First to <VAR0.tdm_kill_win> kills wins
+	Match starts in <tdm_match_start> seconds!
+
+
+[DIALOG d_tdm_death]
+	170, 180
+	NOMOVE
+	NOCLOSE
+	PAGE 0
+	resizepic  0 0 5120 400 140
+	text 20 20 50 0
+	text 20 50 50 1
+	text 20 80 80 2
+	text 20 100 20 3
+
+		
+
+[DIALOG d_tdm_death TEXT]
+	You are now dead and will respawn in <VAR0.tdm_respawn_time>.
+	Current Scores:
+	Blue 0
+	Red 0
+
+
+[DEFNAME tdm_defs]
+	tdm_map1 Serpent's Hold
+	tdm_map2 Yew
+	tdm_map3 Deceit
+	tdm_nospell @07aa Just like you, this spell is NOT COOL in this event.
+	tdm_noskill @07aa Just like you, this skill is NOT COOL in this event.
+
+[EVENTS e_queuing]
+	ON=@Attack
+		SRC.unqueue
+	ON=@CharAttack
+		SRC.unqueue
+	ON=@Kill
+		SRC.unqueue
+	ON=@CombatStart
+		SRC.unqueue
+	ON=@UserWarMode
+		SRC.unqueue
+	ON=@Criminal
+		SRC.unqueue
+	ON=@Logout
+		SRC.unqueue
+	
+[EVENTS e_tdm_match]
+	// In a pvp
+	// resitrict spells, skills, pets, some items
+	// robe unequip return 1, no dyes use.
+	// if hit player in same team, do nothing but do 30 damage to src
+	// no mount
+	// no dismount
+	
+	ON=@SpellCast
+		IF ( <ARGN> == 24 ) || ( <ARGN> == 28 ) || ( <ARGN> == 32 ) || ( <ARGN> == 39 ) || ( <ARGN> == 40 ) || ( <ARGN> == 43 ) || ( <ARGN> == 44 ) || ( <ARGN> == 45 ) || ( <ARGN> == 46 ) || ( <ARGN> == 47 ) || ( <ARGN> == 49 ) || ( <ARGN> == 50 ) || ( <ARGN> == 52 ) || ( <ARGN> == 53 ) || ( <ARGN> == 57 ) || ( <ARGN> == 58 ) || ( <ARGN> == 60 ) || ( <ARGN> == 61 ) || ( <ARGN> == 62 ) || ( <ARGN> == 63 ) || ( <ARGN> == 64 )
+			SYSMESSAGE <def.tdm_nospell>
+			RETURN 1
+		ENDIF
+	
+	ON=@SkillStart
+		IF (<action>==SKILL_HIDING)
+		sysmessage <def.tdm_noskill>
+		action -1
+		return 1
+		ELIF (<action>==SKILL_STEALTH)
+		sysmessage <def.tdm_noskill>
+		action -1
+		return 1
+		ELIF (<ACTION>==SKILL_NECROMANCY)
+		SYSMESSAGE <def.tdm_noskill>
+		ACTION -1
+		RETURN 1
+		ELIF (<ACTION>==SKILL_POISONING)
+		ACTION -1
+		RETURN 1
+		ENDIF
+		
+	ON=@DEATH
+		stone
+		invis
+		tag.TDM.deaths += 1
+		hits = <maxhits>
+		mana = <maxmana>
+		stam = <maxstam>
+		//death sdialog - show score, not moveable, not closeable, transparent. Show team k/d
+		sysmessage @07aa Respawning in...
+		tdm_countdown 10
+		TIMERF 7, tdm_close_dialogs
+		TIMERF 10, tdm_spawn
+	
+	ON=@LOGOUT
+		serv.newitem=i_logout_timer
+		new.cont=<src>
+
+	ON=@LOGIN
+		src.findid.i_logout_timer.remove
+
+[eof]

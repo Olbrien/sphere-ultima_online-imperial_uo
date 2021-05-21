@@ -1,0 +1,269 @@
+// April fools prank starts here
+
+[DIALOG d_april_fool_2006]
+160,180
+
+resizepic 0 0 9270 360 170
+dtext 10 10 5 An error has been detected with your login procedure.
+dtext 10 40 5 Please ensure that all third party programs are off.
+dtext 10 70 5 To refresh your login data, please press Alt F4 now.
+dtext 10 100 5 Thank you for your co-operation,
+dtext 10 130 20 The UO Staff Team
+
+[DIALOG d_april_fool_2006 TEXT]
+
+[DIALOG d_april_fool_2006 BUTTON]
+
+// Ends here
+
+[plevel 0]
+imperial2020
+
+[FUNCTION imperial2020]
+//SRC.SYSMESSAGE @07aa Sorry but the time to claim this reward has passed.
+//RETURN 1
+IF (<EVAL <SRC.ACCOUNT.TAG0.CLAIMEDIMPERIAL2020ONLINE>>==0)
+    IF (<SRC.ACCOUNT.TOTALCONNECTTIME> >= 2500)
+        SRC.ACCOUNT.TAG.ELIGIBLEFORSKILL = 1
+        SRC.ACCOUNT.TAG.CLAIMEDIMPERIAL2020ONLINE = 1
+        SRC.ACCOUNT.TAG.ALLOCATEDSKILL = <EVAL <SRC.ACCOUNT.TAG0.ALLOCATEDSKILL> + 50>
+        SRC.SYSMESSAGE @07aa You been rewarded with 50% claimskill for being part of Imperial UO start!
+    ELSE
+        SRC.SYSMESSAGE You need 2500 minutes to claim this reward. (<SRC.ACCOUNT.TOTALCONNECTTIME>/2500)
+    ENDIF
+ELSE
+   SRC.SYSMESSAGE You have claimed this reward already.
+ENDIF
+RETURN 1
+
+
+[FUNCTION claimitem]
+IF !(<ACCOUNT.TAG.ALLOCATEDITEM>)
+   SRC.SYSMESSAGE You have no item to claim at this time.
+   RETURN 1
+ENDIF
+DIALOG d_claim_item
+
+[DIALOG d_claim_item]
+0,0
+
+resizepic 0 0 2600 450 325
+
+dtext 100 40 25 This account has been allocated <EVAL <ACCOUNT.TAG.ALLOCATEDITEM>> rewards.
+dtext 100 57 25 Please select an item from the list below!
+
+tilepic 17 100 <HVAL 02767>
+dtext 65 115 50 "I Survived the February 2006 Upgrade" Statue 1
+tilepic 17 160 <HVAL 02632>
+dtext 65 172 50 "I Survived the February 2006 Upgrade" Statue 2
+tilepic 17 220 <HVAL 020D9>
+dtext 65 230 50 "I Survived the February 2006 Upgrade" Statue 3
+
+[DIALOG d_claim_item TEXT]
+
+[DIALOG d_claim_item BUTTON]
+
+
+[FUNCTION skill2006]
+SRC.SYSMESSAGE @07aa Sorry but the time to claim this reward has passed.
+RETURN 1
+IF <SRC.ACCOUNT.TAG0.ALLOCATEDSKILL> > 0
+   SRC.claimskill
+//IF (<SRC.ACCOUNT.TAG0.ELIGIBLEFORSKILL> = 0 )
+//   SRC.ACCOUNT.TAG.ELIGIBLEFORSKILL = 1
+//   SRC.ACCOUNT.TAG.ALLOCATEDSKILL = 25
+//ENDIF
+ELSE
+   SRC.SYSMESSAGE You have no skill to collect.
+ENDIF
+
+[FUNCTION skill2007]
+SRC.SYSMESSAGE @07aa Sorry but the time to claim this reward has passed.
+RETURN 1
+IF (<SRC.ACCOUNT.TAG0.2007SKILL> = 0)
+   SRC.ACCOUNT.TAG0.2007SKILL=1
+   SRC.ACCOUNT.TAG.ELIGIBLEFORSKILL = 1
+   SRC.ACCOUNT.TAG.ALLOCATEDSKILL = <SRC.ACCOUNT.TAG0.ALLOCATEDSKILL> + 50
+   SERV.NEWITEM i_wreath_christmas2007
+   NEW.CONT=<SRC.FINDLAYER.LAYER_BANKBOX.UID>
+   SERV.NEWITEM i_check
+   NEW.MORE2=50000
+   NEW.CONT=<SRC.FINDLAYER.LAYER_BANKBOX.UID>
+   SRC.SYSMESSAGE @54 Your account has been awarded 50% skill, a wreath, and 50k, in return for 7 days rollback.
+   SRC.SYSMESSAGE @54 Please use the skill allocator in your Travel Papers to claim it.
+   SERV.LOG Skill 2007 Claimed on account <SRC.ACCOUNT>: <SRC.NAME> <SRC.UID>
+ENDIF
+
+[FUNCTION claimskill]
+//SRC.SYSMESSAGE This command is disabled since it is no longer in use.
+//RETURN 1
+IF (<SRC.ACCOUNT.TAG0.ALLOCATEDSKILL> < 5)
+   SRC.SYSMESSAGE You have not accumulated enough skill to claim at this time.
+   RETURN 1
+//ELSEIF !(<SRC.ACCOUNT.TAG0.ELIGIBLEFORSKILL>)
+  // SRC.SYSMESSAGE You have no skill to claim at this time.
+  // RETURN 1
+ENDIF
+DIALOG d_skill_bonus
+
+[DIALOG d_skill_bonus]
+200, 50
+NOMOVE
+NODISPOSE
+
+resizepic 13 26 9350 510 410
+resizepic 39 64 9300 460 315
+
+
+  dtext 244 35 2300 Claimskill
+  dtext 50 380 0 This account has been allocated <EVAL <ACCOUNT.TAG.ALLOCATEDSKILL>>% skill points.
+  dtext 50 395 0 Please select a skill to increase by 5% on this character.
+  dtext 50 410 90 (Don't forget: Claimskill can be used by any character of your account.)
+ button  45 90 <eval 0d2> <eval 0d3> 1 0 10
+  button  45 112 <eval 0d2> <eval 0d3> 1 0 11
+  button  45 134 <eval 0d2> <eval 0d3> 1 0 12
+  button  45 156 <eval 0d2> <eval 0d3> 1 0 13
+  button  45 178 <eval 0d2> <eval 0d3> 1 0 14
+  button  45 200 <eval 0d2> <eval 0d3> 1 0 15
+//button  55 192 <eval 0d2> <eval 0d3> 1 0 16
+  button  45 222 <eval 0d2> <eval 0d3> 1 0 26 //mystic
+  button  45 244 <eval 0d2> <eval 0d3> 1 0 17
+  button  45 266 <eval 0d2> <eval 0d3> 1 0 18 
+//  button  45 243 <eval 0d2> <eval 0d3> 1 0 19
+//  button  45 261 <eval 0d2> <eval 0d3> 1 0 20
+  button  45 288 <eval 0d2> <eval 0d3> 1 0 21 
+//  button  45 310 <eval 0d2> <eval 0d3> 1 0 22 
+  button  45 332 <eval 0d2> <eval 0d3> 1 0 23 
+  button  45 354 <eval 0d2> <eval 0d3> 1 0 24 
+//  button  45 315 <eval 0d2> <eval 0d3> 1 0 25 
+  
+  button 205  90 <eval 0d2> <eval 0d3> 1 0 27
+  button 205 112 <eval 0d2> <eval 0d3> 1 0 28
+//button 205 134 <eval 0d2> <eval 0d3> 1 0 29
+// button 205 156 <eval 0d2> <eval 0d3> 1 0 30
+  button 205 178 <eval 0d2> <eval 0d3> 1 0 31
+  button 205 200 <eval 0d2> <eval 0d3> 1 0 32
+  button 205 222 <eval 0d2> <eval 0d3> 1 0 33
+//  button 205 209 <eval 0d2> <eval 0d3> 1 0 34
+  button 205 244 <eval 0d2> <eval 0d3> 1 0 35 
+  button 205 266 <eval 0d2> <eval 0d3> 1 0 36 
+  button 205 288 <eval 0d2> <eval 0d3> 1 0 37
+//  button 205 278 <eval 0d2> <eval 0d3> 1 0 38
+  button 205 310 <eval 0d2> <eval 0d3> 1 0 39
+  button 205 68 <eval 0d2> <eval 0d3> 1 0 40 // poisoning
+  button 205 332 <eval 0d2> <eval 0d3> 1 0 41
+  button 45 68 <eval 0d2> <eval 0d3> 1 0 42 //necro
+//  button 205 298 <eval 0d2> <eval 0d3> 1 0 43 //stealing
+  button 205  354 <eval 0d2> <eval 0d3> 1 0 44
+
+  button 205 134 <eval 0d2> <eval 0d3> 1 0 45
+//button 355 112 <eval 0d2> <eval 0d3> 1 0 46
+  button 45 310 <eval 0d2> <eval 0d3> 1 0 47
+//button 355 156 <eval 0d2> <eval 0d3> 1 0 48
+//button 355 178 <eval 0d2> <eval 0d3> 1 0 49
+  button 205 156 <eval 0d2> <eval 0d3> 1 0 50
+  button 355 222 <eval 0d2> <eval 0d3> 1 0 51
+  button 355 244 <eval 0d2> <eval 0d3> 1 0 52
+  button 355 266 <eval 0d2> <eval 0d3> 1 0 53
+  button 355 288 <eval 0d2> <eval 0d3> 1 0 54
+  button 355 310 <eval 0d2> <eval 0d3> 1 0 55
+  button 355 332 <eval 0d2> <eval 0d3> 1 0 56
+  button 355 354 <eval 0d2> <eval 0d3> 1 0 57
+//button 335 329 <eval 0d2> <eval 0d3> 1 0 58
+
+  dtext  65  90 0 Alchemy
+  dtext  65 112 0 Assessment
+  dtext  65 134 0 Creature lore
+  dtext  65 156 0 Item lore
+  dtext  65 178 0 Arms lore
+  dtext  65 200 0 Shieldfighting
+//dtext  75 192 0 unused
+  dtext  65 222 0 Mystic lore 
+  dtext  65 244 0 Blacksmithy 
+//  dtext  60 243 0 Songs of Peace
+//  dtext  60 261 0 Survival
+  dtext  65 266 0 Bowery 
+  dtext  65 288 0 Carpentry  
+//dtext  65 310 0 Cartography  
+  dtext  65 332 0 Cooking 
+//  dtext  60 346 0 Songs of the World
+  dtext  65 354 0 Detection
+  
+  dtext 225  90 0 Healing
+  dtext 225 112 0 Fishing
+//dtext 225 134 0 Netherworld lore
+//dtext 225 156 0 Farming/Herding
+  dtext 225 178 0 Hiding
+  dtext 225 200 0 Songs of War
+  dtext 225 222 0 Inscription
+//  dtext 220 209 0 Lockpicking/Traps
+  dtext 225 244 0 Magery 
+  dtext 225 266 0 Resist Magic 
+  dtext 225 288 0 Tactics 
+//  dtext 220 278 0 Snooping
+  dtext 225 310 0 Musicianship 
+  dtext 225 68 0 Poisoning
+  dtext 225 332 0 Archery 
+  dtext 65 68 0 Necromancy
+//  dtext 370 329 0 Stealing 
+  dtext 225  354 0 Tailoring
+  
+  dtext 225 134 0 Taming
+//dtext 375 112 0 Herbs lore
+  dtext 65 310 0 Tinkering 
+//dtext 65 310 0 Tracking 
+//dtext 375 178 0 Masonry
+  dtext 225 156 0 Blade weapons
+  dtext 375 222 0 Blunt weapons
+  dtext 375 244 0 Piercing weapons
+  dtext 375 266 0 Unarmed combat
+  dtext 375 288 0 Lumberjacking
+  dtext 375 310 0 Mining
+  dtext 375 332 0 Meditation
+  dtext 375 354 0 Stealth
+//dtext 375 364 0 Stealing
+
+//button 400 350 <eval 047b> <eval 047c> 1 0 60
+
+  
+[DIALOG d_skill_bonus TEXT]
+
+[DIALOG d_skill_bonus BUTTON]
+ONBUTTON=10 58
+  IF (0<ACCOUNT.TAG.ALLOCATEDSKILL> < 5)
+     SRC.SYSMESSAGE You have no skill to claim at this time.
+     RETURN 1
+  //ELSEIF !(<ACCOUNT.TAG.ELIGIBLEFORSKILL>)
+     //SRC.SYSMESSAGE You have no skill to claim at this time.
+     //RETURN 1
+  ENDIF
+  LOCAL.SKILL=<ARGN1>
+  f_allocatedskill_finish <LOCAL.SKILL>
+  
+[FUNCTION f_allocatedskill_finish] 
+LOCAL.SKILL    = <eval (<args> - 10)>
+LOCAL.SKILL = <SERV.SKILL(<LOCAL.SKILL>).KEY>
+LOCAL.SKILLAMOUNT=<<LOCAL.SKILL>>
+
+IF (<SKILLTOTAL> > 11950)
+    IF (<<LOCAL.SKILL>> > 950)
+        TRY <LOCAL.SKILL> = 100.0
+    ELSE
+        SYSMESSAGE You do not have enough room under the total skillcap (1200%) to add 5 skillpoints.
+    ENDIF
+ELSEIF (<<LOCAL.SKILL>> > 950 ) 
+    TRY <LOCAL.SKILL> = 100.0
+    //SYSMESSAGE You already have more than 95.0% skill in that skill. Please reduce it to 95% and try again.
+ELSE
+    TRY <LOCAL.SKILL>    = <LOCAL.SKILLAMOUNT> + 5.0
+ENDIF
+
+SERV.LOG <NAME> has claimed +5 <LOCAL.SKILL> from the skill grant.
+SRC.SYSMESSAGE @07a1 To claim more skills please use the .claimskill command.
+SRC.ACCOUNT.TAG.ALLOCATEDSKILL=<EVAL (<SRC.ACCOUNT.TAG.ALLOCATEDSKILL> - 5)>
+IF (0<SRC.ACCOUNT.TAG.ALLOCATEDSKILL>==0)
+    SRC.ACCOUNT.TAG.ALLOCATEDSKILL=
+ENDIF
+RETURN 1
+  
+[EOF]

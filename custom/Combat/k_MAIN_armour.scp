@@ -1,0 +1,144 @@
+//BY:      Jorge Pereira, evren@portugalmail.pt
+//PURPOSE: penalties for wearing armour, depending on its weight.
+
+
+// calculate weight modifier for layers.
+[FUNCTION f_ap_layer_factor]
+   if ( 0 )
+   elseif ( <argn> == layer_chest )
+      LOCAL.FACTOR	= 3
+   elseif ( <argn> == layer_shirt )
+      LOCAL.FACTOR	= 3
+   elseif ( <argn> == layer_arms )
+      LOCAL.FACTOR	= 3
+   elseif ( <argn> == layer_gloves )
+      LOCAL.FACTOR	= 2
+   elseif ( <argn> == layer_helm )
+      LOCAL.FACTOR	= 2
+   else
+      LOCAL.FACTOR	= 1
+   endif
+   RETURN <LOCAL.FACTOR>
+   
+// calculate weight modifier for metal - Wig 2008
+[FUNCTION f_ap_layer_metal_factor]
+   if ( 0 )
+   elseif ( ((<FINDLAYER(<argn>).TDATA1>) == mat_copper) || ((<FINDLAYER(<argn>).TDATA1>) == mat_iron) || ((<FINDLAYER(<argn>).TDATA1>) == mat_pure_copper) )
+      LOCAL.FACTOR=70
+   elseif ( ((<FINDLAYER(<argn>).TDATA1>) == mat_bronze) || ((<FINDLAYER(<argn>).TDATA1>) == mat_ferrum) || ((<FINDLAYER(<argn>).TDATA1>) == mat_brass) )
+      LOCAL.FACTOR=60
+   elseif ( ((<FINDLAYER(<argn>).TDATA1>) == mat_silver) || ((<FINDLAYER(<argn>).TDATA1>) == mat_gold) || ((<FINDLAYER(<argn>).TDATA1>) == mat_steel) )
+      LOCAL.FACTOR=50
+   elseif ( ((<FINDLAYER(<argn>).TDATA1>) == mat_terathane) || ((<FINDLAYER(<argn>).TDATA1>) == mat_titanium) || ((<FINDLAYER(<argn>).TDATA1>) == mat_entit) )
+      LOCAL.FACTOR=40
+   elseif ( ((<FINDLAYER(<argn>).TDATA1>) == mat_agapite) || ((<FINDLAYER(<argn>).TDATA1>) == mat_shadow) || ((<FINDLAYER(<argn>).TDATA1>) == mat_cobalt) )
+      LOCAL.FACTOR=30
+   elseif ( ((<FINDLAYER(<argn>).TDATA1>) == mat_shakudo) || ((<FINDLAYER(<argn>).TDATA1>) == mat_billon) || ((<FINDLAYER(<argn>).TDATA1>) == mat_skargard) )
+      LOCAL.FACTOR=20
+   elseif ( ((<FINDLAYER(<argn>).TDATA1>) == mat_verite) || ((<FINDLAYER(<argn>).TDATA1>) == mat_valorite) )
+      LOCAL.FACTOR=10
+   else
+      LOCAL.FACTOR=5
+   endif
+   RETURN <LOCAL.FACTOR>
+
+
+// Accumulate the weight in a layer into VAR.AP_TOTAL
+[FUNCTION f_ap_layer_recalc] // <args> must be the layer type
+   VAR.LAYER=<EVAL (0+<ARGS>)>
+   if ( (<FINDLAYER(<VAR.LAYER>).TYPE> == T_ARMOR) || (<FINDLAYER(<VAR.LAYER>).TYPE> == T_ARMOR_LEATHER) || (<FINDLAYER(<VAR.LAYER>).TYPE> == T_SHIELD) )
+      f_ap_layer_factor <VAR.LAYER>
+      f_ap_layer_metal_factor <VAR.LAYER>
+      
+//      LOCAL.STR = <PERCENT_OF_SCALE 0 120 <STR>>
+//      LOCAL.STR = <VALUE_FROM_POS 0 115 <LOCAL.STR>>
+      
+      VAR.RETURN	= <EVAL (<f_ap_layer_metal_factor> * <f_ap_layer_factor>)>
+      if ( <VAR.RETURN> < 0 )
+         VAR.RETURN = 0
+      endif   
+      VAR.AP_TOTAL= <eval (<VAR.AP_TOTAL> + <VAR.RETURN>)>
+      
+// Working out enhanced problems with low-level armours
+// -------------------------------------------------
+// -BELOW BRACKETED DUE TO BEING OUTDATED, JAN 2008-
+// -------------------------------------------------
+
+//      IF ( (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_copper) || (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_pure_copper) || (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_iron) || (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_ferrum) || (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_brass) || (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_chrome) )
+         // Only armour worked into the system for DEFINITE now.
+//         IF ( (<SKILLTOTAL> <= 300) && (<MAGERY> >= 950) )
+//            IF ( strmatch( "*ring*", "<FINDLAYER(<var.layer>).BASEID>" )
+//               VAR.AP_COMFORT=<eval ((<VAR.AP_COMFORT> + 20) + (<SKILLTOTAL> \ 15) )>
+//            ELSEIF ( strmatch( "*chain*", "<FINDLAYER(<var.layer>).BASEID>" )
+//               VAR.AP_COMFORT=<eval ((<VAR.AP_COMFORT> + 40) + (<SKILLTOTAL> \ 15) )>
+//            ELSEIF ( strmatch( "*plate*", "<FINDLAYER(<var.layer>).BASEID>" )
+//               VAR.AP_COMFORT=<eval ((<VAR.AP_COMFORT> + 60) + (<SKILLTOTAL> \ 15) )>
+//            ENDIF	    
+//         ENDIF
+//      ELSEIF ( (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_silver) || (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_gold) || (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_bronze) || (<FINDLAYER(<VAR.LAYER>).TDATA1> == mat_steel))
+//         IF ( (<SKILLTOTAL> <= 400) && (<MAGERY> >= 750) )
+//            IF ( strmatch( "*ring*", "<FINDLAYER(<var.layer>).BASEID>" )
+//               VAR.AP_COMFORT=<eval ((<VAR.AP_COMFORT> + 15) + (<SKILLTOTAL> \ 15) )>
+//            ELSEIF ( strmatch( "*chain*", "<FINDLAYER(<var.layer>).BASEID>" )
+//               VAR.AP_COMFORT=<eval ((<VAR.AP_COMFORT> + 30) + (<SKILLTOTAL> \ 15) )>
+//            ELSEIF ( strmatch( "*plate*", "<FINDLAYER(<var.layer>).BASEID>" )
+//               VAR.AP_COMFORT=<eval ((<VAR.AP_COMFORT> + 45) + (<SKILLTOTAL> \ 15) )>
+//            ENDIF	    
+//         ENDIF
+//      ENDIF
+
+//-----------------
+// -END BRACKETING-
+//-----------------
+
+      IF ( (<SKILLTOTAL> <= 400) && (<MAGERY> >= 750) )
+         IF ( strmatch( "*ring*", "<FINDLAYER(<var.layer>).BASEID>" )
+            VAR.AP_COMFORT=<eval ((<VAR.AP_COMFORT> + 15) + (<SKILLTOTAL> \ 15) )>
+         ELSEIF ( strmatch( "*chain*", "<FINDLAYER(<var.layer>).BASEID>" )
+            VAR.AP_COMFORT=<eval ((<VAR.AP_COMFORT> + 30) + (<SKILLTOTAL> \ 15) )>
+         ELSEIF ( strmatch( "*plate*", "<FINDLAYER(<var.layer>).BASEID>" )
+            VAR.AP_COMFORT=<eval ((<VAR.AP_COMFORT> + 45) + (<SKILLTOTAL> \ 15) )>
+         ENDIF	    
+      ENDIF      
+
+   else
+      VAR.RETURN=0
+   endif
+   RETURN 0
+
+
+// the main function
+[FUNCTION f_ap_recalc]
+   // calculate new total
+   VAR.AP_TOTAL=0
+   VAR.AP_COMFORT=0
+   
+   CONT.f_ap_layer_recalc layer_shoes
+   CONT.f_ap_layer_recalc layer_pants
+   CONT.f_ap_layer_recalc layer_collar
+   CONT.f_ap_layer_recalc layer_shirt
+   CONT.f_ap_layer_recalc layer_chest
+   CONT.f_ap_layer_recalc layer_legs
+   CONT.f_ap_layer_recalc layer_gloves
+   CONT.f_ap_layer_recalc layer_arms
+   CONT.f_ap_layer_recalc layer_helm
+
+   // penalty: combat - checked on @Hit
+   LOCAL.TACTICS = <EVAL (<CONT.TACTICS>/5)>
+   LOCAL.AP_COMBAT = <EVAL ((<VAR.AP_TOTAL>*3)/4)>
+   TAG.AP_COMBAT = <eval (<LOCAL.AP_COMBAT> - <LOCAL.TACTICS>)>
+   IF (<CONT.TAG0.DEBUG.COMFORT>=1)
+      CONT.SAY ApTotal:<EVAL <VAR.AP_TOTAL>>  LApCombat: <EVAL <LOCAL.AP_COMBAT>>  Tactics:<EVAL <LOCAL.TACTICS>>  TApCombat: <EVAL <TAG.AP_COMBAT>>
+   ENDIF
+
+   // penalty: magery - checked on @SpellCast
+   // Modified by Wigifer to incorporate armour type check
+   // Modifed again by Wigifer Jan 2008 for armour fizzle
+   IF (<VAR0.AP_COMFORT> > 0 )
+      TAG.AP_MAGERY = <eval ( ( ((<VAR.AP_TOTAL>*130)/100) - (<CONT.MAGERY> / 4)) + (<VAR.AP_COMFORT>) )>
+   ELSE
+//      TAG.AP_MAGERY=0 Put this in temporarily for magery weight - Wig
+      TAG.AP_MAGERY = <eval ( ((<VAR.AP_TOTAL>*130)/100) - (<CONT.MAGERY> / 4) )>
+   ENDIF
+   
+[EOF]

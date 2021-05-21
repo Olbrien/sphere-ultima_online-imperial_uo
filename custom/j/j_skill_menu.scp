@@ -1,0 +1,9 @@
+[DIALOG d_skills]
+25,25
+page 0
+resizepic 0 0 9250 590 430
+DTEXT 30 50 30 Assessment
+
+[DIALOG d_skills BUTTON]
+
+[DIALOG d_skills TEXT]
